@@ -1,0 +1,13 @@
+
+apply plugin: 'scala'
+apply plugin: 'application'
+
+mainClassName = "fr.xebia.gbildi.Main"
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.8'
+}
+
+repositories {
+    mavenCentral()
+}
