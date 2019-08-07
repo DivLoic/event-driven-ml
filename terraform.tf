@@ -4,8 +4,8 @@ provider "google" {
   region = "europe-west1"
 }
 
-resource "google_storage_bucket" "input-bucket" {
-  name = "edml_dataset"
+resource "google_storage_bucket" "source-bucket" {
+  name = "edml_data"
   location = "EU"
   labels = {
     env = "prod"
