@@ -1,3 +1,11 @@
+terraform {
+  backend "gcs" {
+    bucket = "edml"
+    prefix = "/metadata"
+    credentials = ".terraform/edml-gcp-access-key.json"
+  }
+}
+
 provider "google" {
   credentials = "${file(".terraform/edml-gcp-access-key.json")}"
   project = "event-driven-ml"
