@@ -1,0 +1,86 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: edml-scoring-app
+  namespace: default
+  labels:
+    app: edml-scoring-app
+spec:
+  selector:
+    matchLabels:
+      app: edml-scoring-app
+  template:
+    metadata:
+      labels:
+        app: edml-scoring-app
+    spec:
+      containers:
+        - name: edml-scoring
+          image: gcr.io/event-driven-ml/edml-scoring:latest
+          env:
+            - name: PREDIC_TOPIC
+              value: EDML-PREDICTION-TOPIC
+            - name: DROPOFF_TOPIC
+              value: TAXI-TRIP-DROPOFF-REPLAY
+            - name: SCORING_TOPIC
+              value: TRIP-DURATION-SCORE
+            - name: CORRECTION_TOPIC
+              value: TRIP-DURATION-RESULT
+            - name: APPLICATION_ID
+              value: EDML-TRIP-SCORING
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: api-key
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: secret-key
+            - name: BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: bootstrap-servers
+            - name: SR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: sr-api-key
+            - name: SR_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: sr-secret-key
+            - name: SCHEMA_REGISTRY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: schema-registry-url
+            - name: SASL_CLASS
+              valueFrom:
+                secretKeyRef:
+                  name: confluent-secrets
+                  key: sasl-class
+            - name: ROOT_LOG_LVL
+              value: INFO
+
+        - name: prometheus-to-sd-serving
+          image: gcr.io/google-containers/prometheus-to-sd:v0.2.6
+          command:
+            - /monitor
+            - --source=:http://localhost:9001
+            - --stackdriver-prefix=custom.googleapis.com
+            - --pod-id=$(POD_ID)
+            - --namespace-id=$(POD_NAMESPACE)
+          env:
+            - name: POD_ID
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.uid
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

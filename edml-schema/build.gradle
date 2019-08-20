@@ -1,0 +1,36 @@
+plugins {
+    id 'com.zlad.gradle.avrohugger' version '0.2.5'
+}
+
+apply plugin: 'scala'
+apply plugin: 'com.zlad.gradle.avrohugger'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url = 'http://packages.confluent.io/maven/' }
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.8'
+    compile group: 'org.zeroturnaround', name: 'zt-zip', version: '1.13'
+    compile group: 'org.apache.avro', name: 'avro', version: '1.9.1'
+    compile group: 'org.tensorflow', name: 'tensorflow', version: '1.13.1'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    compile group: 'io.confluent', name: 'kafka-avro-serializer', version: '5.3.1'
+    compile group: 'io.confluent', name: 'kafka-streams-avro-serde', version: '5.3.1'
+    compile group: 'com.github.pureconfig', name: 'pureconfig_2.12', version: '0.12.1'
+}
+
+compileScala {
+    scalaCompileOptions.additionalParameters = [ '-encoding', 'utf8' ]
+}
+
+avrohugger {
+    sourceFormat = SpecificRecord
+    destinationDirectory = file(project.buildDir.path + '/generated-main-avro-scala')
+    typeMapping {
+        uuidType = JavaUuid
+    }
+}

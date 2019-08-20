@@ -1,0 +1,15 @@
+---
+global:
+  scrape_interval:     1s
+  evaluation_interval: 1s
+
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+
+  - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.*), topic=(.*), partition=(.*)><>records-(.*)"
+    labels: {client: $1, topic: $2, partition: $3, metric: $4}
+    name: "$2-$3-RECORDS-$4"
+    type: GAUGE
+
+

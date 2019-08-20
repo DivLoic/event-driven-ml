@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "TaxiTripDropoff",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "dropoff_datetime",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "trip_distance",
+      "type": "float"
+    },
+    {
+      "name": "trip_duration",
+      "type": "int"
+    },
+    {
+      "name": "total_amount",
+      "type": "float"
+    }
+  ]
+}

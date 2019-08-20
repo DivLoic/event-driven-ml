@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "TripDurationCorrection",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "dropoff_datetime",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "trip_duration",
+      "type": "int"
+    },
+    {
+      "name": "prediction",
+      "type": "float"
+    },
+    {
+      "name": "version",
+      "type": "string"
+    },
+    {
+      "name": "cost",
+      "type": "float"
+    }
+  ]
+}
