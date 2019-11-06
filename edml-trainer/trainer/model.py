@@ -4,11 +4,12 @@ import tensorflow as tf
 BUCKET = None
 PATTERN = "*"
 
-CSV_COLUMNS = ["dayofweek", "hourofday", "pickup_borough", "dropoff_borough", "trip_duration"]
+CSV_COLUMNS = ["uuid", "dayofweek", "hourofday", "pickup_borough", "dropoff_borough", "trip_duration"]
 LABEL_COLUMN = "trip_duration"
+KEY_COLUMN = "uuid"
 
 # Set default values for each CSV column
-DEFAULTS = [[1], [0], [""], [""],  []]
+DEFAULTS = [['no_key'], [1], [0], [""], [""],  []]
 
 # Define some hyperparameters
 TRAIN_STEPS = 10000
@@ -22,7 +23,7 @@ EVAL_DELAY_SECS = None
 
 VERBOSITY = 'INFO'
 
-tf.logging.set_verbosity(v=VERBOSITY)
+tf.compat.v1.logging.set_verbosity(v=VERBOSITY)
 
 
 # Create an input function reading a file using the Dataset API
@@ -30,9 +31,8 @@ tf.logging.set_verbosity(v=VERBOSITY)
 def read_dataset(prefix, mode, batch_size):
     def _input_fn():
         def decode_csv(records):
-            columns = tf.decode_csv(records, record_defaults=DEFAULTS)
+            columns = tf.io.decode_csv(records, record_defaults=DEFAULTS)
             features = dict(zip(CSV_COLUMNS, columns))
-            features["dayofweek"] -= 1
             label = features.pop(LABEL_COLUMN)
             return features, label
 
@@ -40,7 +40,7 @@ def read_dataset(prefix, mode, batch_size):
         file_name = '{}/{}/tlc_yellow_trips_2018-{}.csv'.format(BUCKET, prefix, PATTERN)
         
         # Create list of files that match pattern
-        file_list = tf.gfile.Glob(file_name)
+        file_list = tf.io.gfile.glob(file_name)
 
         # Create dataset from file list
         dataset = (tf.data.TextLineDataset(file_list, compression_type="GZIP")  # Read text file
@@ -98,10 +98,11 @@ def get_wide_deep():
 # Serving input receiver function
 def serving_input_receiver_fn():
     receiver_tensors = {
-        'dayofweek': tf.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
-        'hourofday': tf.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
-        'pickup_borough': tf.placeholder(dtype=tf.string, shape=[None], name="pickup_borough"),
-        'dropoff_borough': tf.placeholder(dtype=tf.string, shape=[None], name="dropoff_borough"),
+        'dayofweek': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
+        'hourofday': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
+        'pickup_borough': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="pickup_borough"),
+        'dropoff_borough': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="dropoff_borough"),
+        KEY_COLUMN: tf.compat.v1.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
     }
     
     features = {
@@ -115,7 +116,7 @@ def serving_input_receiver_fn():
 # Build and train model
 # Create estimator to train and evaluate
 def train_and_evaluate(output_dir):
-    tf.summary.FileWriterCache.clear() # ensure filewriter cache is clear for TensorBoard events file
+    tf.compat.v1.summary.FileWriterCache.clear() # ensure filewriter cache is clear for TensorBoard events file
 
     wide, deep = get_wide_deep()
     
@@ -126,7 +127,7 @@ def train_and_evaluate(output_dir):
     # Add custom evaluation metric
     def my_rmse(labels, predictions):
         pred_values = tf.squeeze(input=predictions["predictions"], axis=-1)
-        return {"rmse": tf.metrics.root_mean_squared_error(labels=labels, predictions=pred_values)}
+        return {"rmse": tf.compat.v1.metrics.root_mean_squared_error(labels=labels, predictions=pred_values)}
     
     estimator = tf.estimator.DNNLinearCombinedRegressor(
         model_dir=output_dir,
@@ -144,7 +145,7 @@ def train_and_evaluate(output_dir):
     exporter = tf.estimator.LatestExporter('exporter', serving_input_receiver_fn=serving_input_receiver_fn)
     
     eval_spec = tf.estimator.EvalSpec(
-        input_fn=read_dataset('val', tf.estimator.ModeKeys.EVAL, 2**15),
+        input_fn=read_dataset('eval', tf.estimator.ModeKeys.EVAL, 2**15),
         steps=EVAL_STEPS,
         start_delay_secs=EVAL_DELAY_SECS,  # start evaluating after N seconds
         throttle_secs=TROTTLE_SECS,  # evaluate every N seconds

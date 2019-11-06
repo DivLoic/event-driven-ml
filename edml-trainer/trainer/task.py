@@ -15,7 +15,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--output_dir',
+        '--output-dir',
         help='GCS location to write checkpoints and export models',
         required=True
     )
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--train_examples',
+        '--train-examples',
         help='Number of examples (in thousands) to run the training job over. '
              'If this is more than actual # of examples available, it cycles through them. '
              'So specifying 1000 here when you have only 100k examples makes this 10 epochs.',
@@ -94,15 +94,15 @@ if __name__ == '__main__':
     arguments.pop('job_dir', None)
     arguments.pop('job-dir', None)
 
-    # output_dir = arguments['output_dir']
-    # # Append trial_id to path if we are doing hptuning
-    # # This code can be removed if you are not using hyperparameter tuning
-    # output_dir = os.path.join(
-    #     output_dir,
-    #     json.loads(
-    #         os.environ.get('TF_CONFIG', '{}')
-    #     ).get('task', {}).get('trail', '')
-    # )
+#     output_dir = arguments['output_dir']
+#     # Append trial_id to path if we are doing hptuning
+#     # This code can be removed if you are not using hyperparameter tuning
+#     output_dir = os.path.join(
+#         output_dir,
+#         json.loads(
+#             os.environ.get('TF_CONFIG', '{}')
+#         ).get('task', {}).get('trail', '')
+#     )
 
     # assign the arguments to the model variables
     output_dir = arguments.pop('output_dir')
