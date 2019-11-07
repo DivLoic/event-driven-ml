@@ -6,9 +6,9 @@ from setuptools import find_packages
 if __name__ == '__main__':
 
     setup(
-        name="taxi_trip_duration",
+        name="trainer",
         version='0.1.0-SNAPSHOT',
-        description='',
+        description='Predict trip duration - NYC taxi public dataset',
         author='',
         author_email='',
         packages=find_packages(),
