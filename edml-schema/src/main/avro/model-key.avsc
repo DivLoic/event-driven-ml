@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "ModelKey",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "application",
+      "type": "string"
+    }
+  ]
+}

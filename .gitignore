@@ -69,6 +69,7 @@ hs_err_pid*
 ### Gradle template
 .gradle
 /build/
+*.sc
 
 # Ignore Gradle GUI config
 gradle-app.setting
@@ -89,7 +90,7 @@ gradle-app.setting
 # .tfstate files
 *.tfstate
 *.tfstate.*
-.terraform
+terraform/.terraform
 
 # Crash log files
 crash.log
@@ -239,4 +240,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
+.libtensorflow/
+*/ccloud.auto.tfvars
+*edml-cmd/*

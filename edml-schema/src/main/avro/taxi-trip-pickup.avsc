@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "name": "TaxiTripPickup",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "uuid",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "pickup_datetime",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "dayofweek",
+      "type": "int"
+    },
+    {
+      "name": "hourofday",
+      "type": "int"
+    },
+    {
+      "name": "pickup_borough",
+      "type": "string"
+    },
+    {
+      "name": "dropoff_borough",
+      "type": "string"
+    }
+  ]
+}

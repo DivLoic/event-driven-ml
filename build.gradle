@@ -1,0 +1,4 @@
+allprojects {
+    group = 'fr.xebia.gbildi'
+    version = '0.1.0-SNAPSHOT'
+}

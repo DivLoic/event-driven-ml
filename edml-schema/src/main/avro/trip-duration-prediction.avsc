@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "TripDurationPrediction",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "prediction",
+      "type": "float"
+    },
+    {
+      "name": "version",
+      "type": "string"
+    }
+  ]
+}

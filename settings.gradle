@@ -10,5 +10,11 @@ pluginManagement {
 
 rootProject.name = 'event-driven-ml'
 
-include 'edml-training'
+include 'edml-groundhog'
 include 'edml-streaming'
+include 'edml-trainer'
+include 'edml-common'
+include 'edml-schema'
+include 'edml-serving'
+include 'edml-scoring'
+

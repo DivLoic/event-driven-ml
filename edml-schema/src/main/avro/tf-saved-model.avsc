@@ -1,0 +1,52 @@
+{
+  "type": "record",
+  "name": "TFSavedModel",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "ziped_model",
+      "type": "bytes"
+    },
+    {
+      "name": "version",
+      "type": "string"
+    },
+    {
+      "name": "inputs",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "TFInOperation",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "output",
+      "type": {
+        "type": "record",
+        "name": "TFOutOperation",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

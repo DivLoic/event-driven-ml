@@ -1,0 +1,69 @@
+plugins {
+    id 'com.google.cloud.tools.jib' version '1.7.0'
+}
+
+apply plugin: 'scala'
+apply plugin: 'application'
+
+mainClassName = "fr.xebia.gbildi.Replay"
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url = 'http://packages.confluent.io/maven/' }
+}
+
+jib {
+    from.image = 'openjdk:8-jdk-alpine'
+    to {
+        tags = ['latest', version]
+        image = 'gcr.io/event-driven-ml/edml-groundhog'
+    }
+    container {
+        mainClass = mainClassName
+        jvmFlags = [
+                "-Dcom.sun.management.jmxremote=true",
+                "-Djava.rmi.server.port=7001",
+                "-Djava.rmi.server.hostname=127.0.0.1",
+                "-Dcom.sun.management.jmxremote.authenticate=false",
+                "-Dcom.sun.management.jmxremote.authenticate=false",
+                "-Dcom.sun.management.jmxremote.ssl=false",
+                "-javaagent:/app/libs/jmx_prometheus_javaagent-0.12.0.jar" +
+                        "=9001:/app/resources/jmx-export-config.yaml"
+        ]
+    }
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.8'
+
+    compile project(':edml-schema')
+
+    compile group: 'org.typelevel', name: 'cats-core_2.12', version: '1.6.0'
+
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    compile group: 'com.github.pureconfig', name: 'pureconfig_2.12', version: '0.12.1'
+
+    compile group: 'com.typesafe.akka', name: 'akka-stream-kafka_2.12', version: '1.0.5'
+
+    compile group: 'io.confluent', name: 'kafka-avro-serializer', version: '5.3.1'
+    compile group: 'io.confluent', name: 'kafka-streams-avro-serde', version: '5.3.1'
+
+    compile 'com.google.cloud:google-cloud-storage:1.98.0'
+
+    compile group: 'com.google.cloud', name: 'google-cloud-bigquery', version: '1.98.0'
+
+    compile group: 'com.sksamuel.avro4s', name: 'avro4s-core_2.12', version: '3.0.2'
+
+    compile group: 'io.prometheus.jmx', name: 'jmx_prometheus_javaagent', version: '0.12.0'
+}
+
+compileScala {
+    scalaCompileOptions.additionalParameters = [
+            '-encoding', 'utf8',
+            '-language:postfixOps',
+            '-Ypartial-unification',
+            '-Xmacro-settings:materialize-derivations'
+    ]
+}

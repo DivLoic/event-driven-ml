@@ -1,0 +1,36 @@
+---
+global:
+  scrape_interval:     1s
+  evaluation_interval: 1s
+
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+
+  - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.*), topic=(.*), partition=(.*)><>records-lag: (.*)"
+    labels: {client: $1, topic: $2, partition: $3, metric: records-lag}
+    name: "$2-$3-RECORD-LAG"
+    type: GAUGE
+
+  - pattern: "kafka.producer<type=producer-metrics, client-id=(.*)><>outgoing-byte-rate: (.*)"
+    labels: {client: $1, metric: outgoing-byte-rate}
+    name: "OUTGOING-BYTE-RATE"
+    type: GAUGE
+
+  - pattern: "kafka.producer<type=producer-metrics, client-id=(.*)><>outgoing-byte-total: (.*)"
+    labels: {client: $1, metric: outgoing-byte-rate}
+    name: "OUTGOING-BYTE-TOTAL"
+    type: GAUGE
+
+  - pattern: "kafka.producer<type=producer-topic-metrics, client-id=(.*), topic=(.*)><>record-send-rate: (.*)"
+    labels: {client: $1, topic: $2, metric: record-send-rate}
+    name: "$2-RECORD-SEND-RATE"
+    type: GAUGE
+
+  - pattern: "kafka.producer<type=producer-topic-metrics, client-id=(.*), topic=(.*)><>record-send-total: (.*)"
+    labels: {client: $1, topic: $2, metric: record-send-total}
+    name: "$2-RECORD-SEND-TOTAL"
+    type: GAUGE
+
+
+
