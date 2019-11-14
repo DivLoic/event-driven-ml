@@ -29,7 +29,7 @@ if __name__ == '__main__':
         '--batch-size',
         help='Number of examples to compute gradient over',
         type=int,
-        default=512
+        default=128
     )
 
     parser.add_argument(
