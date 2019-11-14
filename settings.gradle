@@ -12,7 +12,7 @@ rootProject.name = 'event-driven-ml'
 
 include 'edml-groundhog'
 include 'edml-streaming'
-include 'edml-training'
+include 'edml-trainer'
 include 'edml-common'
 include 'edml-schema'
 include 'edml-serving'
