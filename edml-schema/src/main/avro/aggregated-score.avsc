@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "AggregatedTripDurationRmse",
+  "namespace": "fr.xebia.gbildi",
+  "fields": [
+    {
+      "name": "version",
+      "type": "string"
+    },
+    {
+      "name": "count",
+      "type": "int"
+    },
+    {
+      "name": "sum_mse",
+      "type": "float"
+    },
+    {
+      "name": "sum_duration",
+      "type": "float"
+    },
+    {
+      "name": "sum_predicted",
+      "type": "float"
+    }
+  ]
+}

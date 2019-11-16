@@ -2,6 +2,10 @@ variable "gcp_credentials" {}
 
 variable "gcp_project" {}
 
+# ~ 😸 ~ # Gitlab Vars # ~ 😸 ~ #
+
+# ~ 🧠 ~ # TensorBoard Vars # ~ 🧠 ~ #
+
 # ~ ⛅ ~ # Confluent Cloud Vars # ~ ⛅ ~ #
 
 variable "ccloud_broker_list" {}

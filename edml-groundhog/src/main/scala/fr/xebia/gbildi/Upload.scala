@@ -83,7 +83,6 @@ object Upload extends App with TypeMapping with GoogleCloudProvider with Conflue
       pickupFlow.runWith(Producer.plainSink(pickupProducer))
       dropOffFlow.runWith(Producer.plainSink(dropoffProducer))
 
-
     }.toEither
 
   }.recover {

@@ -241,5 +241,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .libtensorflow/
-*/ccloud.auto.tfvars
+ext.*.tfvars
 *edml-cmd/*

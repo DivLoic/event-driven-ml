@@ -26,8 +26,9 @@ trait TypeMapping {
         pickup_datetime = ZonedDateTime.parse(datetime, formatter.withZone(zoneId)).toInstant,
         dayofweek = row.get("dayofweek").getLongValue.intValue(),
         hourofday = row.get("hourofday").getLongValue.intValue(),
-        pickup_borough = row.get("pickup_borough").getStringValue,
-        dropoff_borough = row.get("dropoff_borough").getStringValue
+        pickup_zone_name = row.get("pickup_zone_name").getStringValue,
+        dropoff_zone_name = row.get("dropoff_zone_name").getStringValue,
+        passenger_count = row.get("passenger_count").getLongValue.intValue()
       )
     }
 
@@ -44,10 +45,4 @@ trait TypeMapping {
 
   def extractGenericInstant(fieldName: String, record: GenericRecord) =
     Try(Instant.ofEpochMilli(record.get(fieldName).asInstanceOf[Long]))
-
-
-}
-
-object TypeMapping {
-
 }

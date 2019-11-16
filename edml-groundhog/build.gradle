@@ -54,8 +54,6 @@ dependencies {
 
     compile group: 'com.google.cloud', name: 'google-cloud-bigquery', version: '1.98.0'
 
-    compile group: 'com.sksamuel.avro4s', name: 'avro4s-core_2.12', version: '3.0.2'
-
     compile group: 'io.prometheus.jmx', name: 'jmx_prometheus_javaagent', version: '0.12.0'
 }
 

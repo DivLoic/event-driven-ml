@@ -24,12 +24,16 @@
       "type": "int"
     },
     {
-      "name": "pickup_borough",
+      "name": "pickup_zone_name",
       "type": "string"
     },
     {
-      "name": "dropoff_borough",
+      "name": "dropoff_zone_name",
       "type": "string"
+    },
+    {
+      "name": "passenger_count",
+      "type": "int"
     }
   ]
 }
