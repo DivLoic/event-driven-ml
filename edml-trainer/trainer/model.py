@@ -48,7 +48,7 @@ def read_dataset(prefix, mode, batch_size):
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             num_epochs = None  # indefinitely
-            dataset = dataset.shuffle(buffer_size=10*batch_size, seed=1234)
+            dataset = dataset.shuffle(buffer_size=100000000, seed=1234)
         else:
             num_epochs = 1  # end-of-input after this
 
@@ -119,18 +119,7 @@ def get_wide_deep():
                                                                              vocabulary_list=zone_list)
     fc_dropoffloc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="dropoff_zone_name", 
                                                                               vocabulary_list=zone_list)
-    
-    # Cross features to get combination of day and hour
-    fc_crossed_day_hr = tf.compat.v1.feature_column.crossed_column(keys=[fc_dayofweek, fc_hourofday], hash_bucket_size=24*7)
-    # Cross features to get combination of pickup-dropoff zones
-    fc_crossed_pd_pair = tf.compat.v1.feature_column.crossed_column(keys=[fc_pickuploc, fc_dropoffloc], hash_bucket_size=259*259)
-    # Cross features to get combination of hour and pickup zone
-    fc_crossed_hp_pair = tf.compat.v1.feature_column.crossed_column(keys=[fc_hourofday, fc_pickuploc], hash_bucket_size=24*259)
-    
-    wide = [
-        # Feature crosses
-        fc_crossed_day_hr, fc_crossed_pd_pair, fc_crossed_hp_pair,
-        
+    wide = [        
         # Sparse columns
         fc_dayofweek, fc_hourofday,
         fc_pickuploc, fc_dropoffloc
@@ -140,15 +129,17 @@ def get_wide_deep():
     fn_passenger_count = tf.compat.v1.feature_column.numeric_column(key="passenger_count")
     
     # Embedding_column to "group" together ...
-    fc_embed_pd_pair = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_crossed_pd_pair, dimension=NEMBEDS)
-    fc_embed_day_hr = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_crossed_day_hr, dimension=NEMBEDS)
-    fc_embed_hp_pair = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_crossed_hp_pair, dimension=NEMBEDS)
+    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=NEMBEDS)
+    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=NEMBEDS)
+    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=NEMBEDS)
+    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=NEMBEDS)
     
     deep = [
         fn_passenger_count,
-        fc_embed_pd_pair,
-        fc_embed_day_hr,
-        fc_embed_hp_pair
+        fc_embed_dayofweek,
+        fc_embed_hourofday,
+        fc_embed_pickuploc,
+        fc_embed_dropoffloc
     ]
     
     return wide, deep
