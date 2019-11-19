@@ -37,7 +37,7 @@ def read_dataset(prefix, mode, batch_size):
             return features, label
 
         # filename
-        file_name = '{}/{}/tlc_yellow_trips_2018-{}.csv'.format(BUCKET, prefix, PATTERN)
+        file_name = 'gs://{}/data/taxi-trips/{}/tlc_yellow_trips_2018-{}.csv'.format(BUCKET, prefix, PATTERN)
         
         # Create list of files that match pattern
         file_list = tf.io.gfile.glob(file_name)
