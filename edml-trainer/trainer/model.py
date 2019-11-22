@@ -48,7 +48,7 @@ def read_dataset(prefix, mode, batch_size):
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             num_epochs = None  # indefinitely
-            dataset = dataset.shuffle(buffer_size=100*batch_size, seed=1234)
+            dataset = dataset.shuffle(buffer_size=1000*batch_size, seed=1234)
         else:
             num_epochs = 1  # end-of-input after this
 

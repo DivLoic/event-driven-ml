@@ -37,5 +37,7 @@ gcloud ai-platform jobs submit training $JOB_NAME \
     --bucket=$BUCKET \
     --output-dir=$OUTDIR \
     --pattern="*" \
-    --train-examples=500 \
+    --nembeds 10 \
+    --nnsize 10 5 \
+    --train-examples=174000 \
     --eval-steps=1
