@@ -1,16 +1,9 @@
-###########################################
-################### VPC ###################
-###########################################
 resource "google_compute_network" "default" {
 
   name = "${var.global_prefix}"
   auto_create_subnetworks = false
 
 }
-
-###########################################
-################# Subnets #################
-###########################################
 
 resource "google_compute_subnetwork" "private_subnet" {
 
@@ -31,10 +24,6 @@ resource "google_compute_subnetwork" "public_subnet" {
   ip_cidr_range = "10.0.2.0/24"
 
 }
-
-###########################################
-############ Compute Firewalls ############
-###########################################
 
 resource "google_compute_firewall" "rest_proxy" {
 
@@ -74,29 +63,12 @@ resource "google_compute_firewall" "kafka_connect" {
 
 }
 
-resource "google_compute_firewall" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] >= 1 ? 1 : 0}"
-
-  name = "ksql-server-${var.global_prefix}"
-  network = "${google_compute_network.default.name}"
-
-  allow {
-
-    protocol = "tcp"
-    ports = ["22", "8088"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags = ["ksql-server-${var.global_prefix}"]
-}
-
 resource "google_compute_firewall" "control_center" {
 
   count = "${var.instance_count["control_center"] >= 1 ? 1 : 0}"
 
   name = "control-center-${var.global_prefix}"
-  network = "${google_compute_network.default.name}"
+  network = google_compute_subnetwork.private_subnet.network#"${google_compute_network.default.name}"
   allow {
     protocol = "tcp"
     ports = ["9021"]
