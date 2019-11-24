@@ -7,9 +7,12 @@ lowercaseOutputName: true
 lowercaseOutputLabelNames: true
 rules:
 
-  - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.*), topic=(.*), partition=(.*)><>records-(.*)"
-    labels: {client: $1, topic: $2, partition: $3, metric: $4}
-    name: "$2-$3-RECORDS-$4"
+  - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.*), topic=(.*), partition=(.*)><>records-lag: (.*)"
+    labels: {client: $1, topic: $2, partition: $3, type: lag}
+    name: "$2-RECORDS-LAG"
     type: GAUGE
 
-
+  - pattern: "kafka.streams<type=edml-taxi-trip, model-version=(.*), app-id=(.*), task-id=(.*)><>duration-rmse-value: (.*)"
+    labels: {version: $1, app: $2, task: $3, cost: "rmse"}
+    name: "$2-RMSE-VALUE"
+    type: GAUGE

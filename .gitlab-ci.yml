@@ -1,0 +1,80 @@
+image: gcr.io/event-driven-ml/edml-cicd-base:0.1.0
+
+stages:
+  - version
+  - test
+  - package
+  - train
+  - deploy
+
+.prepare_build: &prepare_build
+  before_script:
+    - cat ./build/version.properties
+    - export PROJECT_VERSION=$(cat ./build/version.properties | grep -i display | awk -F= '{print $2}')
+    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
+
+version:
+  stage: version
+  script:
+    - ./gradlew versionFile
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - build/
+    expire_in: 1 week
+
+test:
+  stage: test
+  <<: *prepare_build
+  script:
+    - ./gradlew test $PROJECT_VERSION
+  dependencies:
+    - version
+
+package:
+  stage: package
+  <<: *prepare_build
+  script:
+    - ./gradlew build jib -x test
+    - gsutil cp ./edml-schema/build/libs/edml-schema-${PROJECT_VERSION}.jar gs://edml/maven/edml-schema/
+    - gsutil cp ./edml-serving/build/libs/edml-serving-${PROJECT_VERSION}.jar gs://edml/maven/edml-serving/
+    - gsutil cp ./edml-scoring/build/libs/edml-scoring-${PROJECT_VERSION}.jar gs://edml/maven/edml-scoring/
+    - gsutil cp ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl gs://edml/pypi/edml-trainer/
+  dependencies:
+    - version
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - build/
+      - edml-trainer/build/python-build/
+    expire_in: 1 week
+
+deploy-app:
+  stage: deploy
+  <<: *prepare_build
+  when: manual
+  only:
+    - trunk
+  script:
+    - echo "I'm deploying now"
+
+train:
+  stage: train
+  <<: *prepare_build
+  script:
+    - echo "Now I'm training ${PY_PROJECT_VERSION} model"
+    - mv ./edml-trainer/build/python-build/trainer*${PY_PROJECT_VERSION}*.whl ./out
+    #- gsutil cp gs://edml/pypi/edml-trainer/edml_trainer*${PROJECT_VERSION}-py2-none-any.whl ./out
+    - cd ./out && unzip .out/edml_trainer*${PY_PROJECT_VERSION}-py2-none-any.whl
+    - ll ./out/*
+    - gcloud ai-platform jobs list
+  dependencies:
+    - package
+
+deploy-model:
+  when: manual
+  only:
+    - trunk
+  stage: deploy
+  script:
+    - echo "I'm deploying now"

@@ -49,7 +49,11 @@ resource "google_compute_instance" "gitlab-runner" {
   name = "gitlab-runner"
   zone = "europe-west1-b"
   machine_type = "n1-standard-2"
+  allow_stopping_for_update = true
   metadata_startup_script = data.template_file.gitlab-runner-startup.rendered
+  service_account {
+    scopes = ["cloud-platform"]
+  }
   tags = ["gitlab"]
   network_interface {
     network = google_compute_network.gitbal.self_link
@@ -135,7 +139,10 @@ resource "google_compute_firewall" "gitlab" {
     ports = ["80"]
   }
   target_tags = ["gitlab"]
-  source_ranges = data.google_compute_lb_ip_ranges.ranges.http_ssl_tcp_internal
+  source_ranges = concat(
+    data.google_compute_lb_ip_ranges.ranges.http_ssl_tcp_internal,
+    [google_compute_subnetwork.private-gitlab-subnet.ip_cidr_range]
+  )
 }
 
 

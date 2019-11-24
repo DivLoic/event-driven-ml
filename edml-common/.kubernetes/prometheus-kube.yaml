@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edml-prometheus-conf
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 1s
+      scrape_timeout: 1s
+
+    scrape_configs:
+      - job_name: 'edml-serving'
+        scrape_interval: 1s
+        static_configs:
+        - targets: ['edml-serving-service:80']
+
+      - job_name: 'edml-scoring'
+        scrape_interval: 1s
+        static_configs:
+        - targets: ['edml-scoring-service:80']
+
+      - job_name: 'replay-pickup'
+        scrape_interval: 1s
+        static_configs:
+        - targets: ['replay-pickup-service:80']
+
+      - job_name: 'replay-dropoff'
+        scrape_interval: 1s
+        static_configs:
+        - targets: ['replay-dropoff-service:80']
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: edml-prometheus
+  namespace: default
+  labels:
+    app: edml-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: edml-prometheus
+  template:
+    metadata:
+      labels:
+        app: edml-prometheus
+    spec:
+      containers:
+        - name: edml-prometheus
+          image: prom/prometheus:v2.8.1
+          volumeMounts:
+            - name: edml-prometheus-conf
+              mountPath: /etc/config
+          args:
+            - --config.file=/etc/config/prometheus.yaml
+      volumes:
+        - name: edml-prometheus-conf
+          configMap:
+            name: edml-prometheus-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edml-prometheus-service
+  namespace: default
+  labels:
+    app: edml-prometheus
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9090
+  selector:
+    app: edml-prometheus
+  type: LoadBalancer
+  loadBalancerIP:

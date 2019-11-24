@@ -1,6 +1,6 @@
 {
   "type": "record",
-  "name": "TripDurationCorrection",
+  "name": "TripDurationMse",
   "namespace": "fr.xebia.gbildi",
   "fields": [
     {
@@ -23,7 +23,7 @@
       "type": "string"
     },
     {
-      "name": "cost",
+      "name": "mse",
       "type": "float"
     }
   ]

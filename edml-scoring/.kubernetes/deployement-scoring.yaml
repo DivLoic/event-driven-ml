@@ -65,22 +65,18 @@ spec:
                   key: sasl-class
             - name: ROOT_LOG_LVL
               value: INFO
-
-        - name: prometheus-to-sd-serving
-          image: gcr.io/google-containers/prometheus-to-sd:v0.2.6
-          command:
-            - /monitor
-            - --source=:http://localhost:9001
-            - --stackdriver-prefix=custom.googleapis.com
-            - --pod-id=$(POD_ID)
-            - --namespace-id=$(POD_NAMESPACE)
-          env:
-            - name: POD_ID
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.uid
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edml-scoring-service
+  namespace: default
+  labels:
+    app: edml-scoring-app
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9001
+  selector:
+    app: edml-scoring-app

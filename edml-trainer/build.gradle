@@ -5,14 +5,15 @@ plugins {
 apply plugin: 'idea'
 
 python {
-    testSourceDirs = files('tests/')
+
     sourceDirs = files('trainer/')
+    testSourceDirs = files('tests/')
     pypiRepoUrl = 'https://pypi.python.org/simple/'
 }
 
 idea {
     module {
         testSourceDirs += file('tests/')
-        sourceDirs += files('taxi_trip_duration/')
+        sourceDirs += files('trainer/')
     }
 }

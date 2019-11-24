@@ -1,4 +1,40 @@
+plugins {
+    id 'net.nemerosa.versioning' version '2.8.2'
+}
+
+
+String now() {
+    new Date().format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
+}
+
+String ciVersion(String current) {
+    if(System.getenv()["CI_JOB_TOKEN"] == null || !versionFile.file.exists()) return current else {
+        Properties properties = new Properties()
+        properties.load(new FileInputStream(versionFile.getFile()))
+        return properties.getProperty("VERSION_DISPLAY")
+    }
+}
+
+versioning {
+
+    scm = 'git'
+    releases = ['release']
+    branchEnv = ['BRANCH_NAME']
+    dirty = { version -> version }
+
+    full = { scmInfo -> "${scmInfo.lastTag.substring(1)}" }
+
+    releaseMode = { nextTag, lastTag, currentTag, extension -> currentTag.substring(1) }
+
+    displayMode = { branchType, branchId, base, build, full, extension -> "${full}-${build}-${now()}" }
+}
+
+versionFile {
+    prefix = 'VERSION_'
+    file = new File(project.buildDir, 'version.properties')
+}
+
 allprojects {
     group = 'fr.xebia.gbildi'
-    version = '0.1.0-SNAPSHOT'
+    version = ciVersion(versioning.info.display)
 }

@@ -51,16 +51,18 @@ class PredictorTransformer(modelSelector: ModelKey, modelStoreName: String, bund
 
     Option(this.bundle).map { bundle =>
 
-      val dayofweek = Tensor.create(Array(1L), LongBuffer.wrap(Array(1L)))
-      val hourofday = Tensor.create(Array(1L), LongBuffer.wrap(Array(9L)))
-      val pickupBorough = Tensors.create(Array(value.get("pickup_borough").toString.getBytes))
-      val dropoffBorough = Tensors.create(Array(value.get("dropoff_borough").toString.getBytes))
+      val dayofweek = Tensor.create(Array(1L), LongBuffer.wrap(Array(value.get("dayofweek").toString.toLong)))
+      val hourofday = Tensor.create(Array(1L), LongBuffer.wrap(Array(value.get("hourofday").toString.toLong)))
+      val pickupBorough = Tensors.create(Array(value.get("pickup_zone_name").toString.getBytes))
+      val dropoffBorough = Tensors.create(Array(value.get("dropoff_zone_name").toString.getBytes))
+      val passengerCount = Tensor.create(Array(1L), FloatBuffer.wrap(Array(value.get("passenger_count").toString.toFloat)))
 
       val result: Tensor[java.lang.Float] = bundle.session().runner()
         .feed("dayofweek", dayofweek)
         .feed("hourofday", hourofday)
-        .feed("pickup_borough", pickupBorough)
-        .feed("dropoff_borough", dropoffBorough)
+        .feed("pickup_zone_name", pickupBorough)
+        .feed("dropoff_zone_name", dropoffBorough)
+        .feed("passenger_count", passengerCount)
 
         .fetch("add")
 

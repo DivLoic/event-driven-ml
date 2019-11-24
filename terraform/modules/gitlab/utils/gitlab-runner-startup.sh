@@ -10,6 +10,11 @@ sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/
 sudo gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
 sudo gitlab-runner start
 
-cat > /home/gitlab-runner/register-all.sh <<- "EOF"
-${REGISTER_SCRIPT}
+sudo gitlab-runner verify --delete
+
+cat > /etc/gitlab-runner/config.toml <<- "EOF"
+${RUNNER_CONFIG}
 EOF
+
+gitlab-runner verify
+
