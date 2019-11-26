@@ -185,6 +185,8 @@ def train_and_evaluate(output_dir):
         linear_feature_columns=wide,
         dnn_feature_columns=deep,
         dnn_hidden_units=NNSIZE,
+        batch_norm=True,
+        dnn_dropout=0.1,
         config=run_config)
     
     estimator = tf.contrib.estimator.add_metrics(estimator=estimator, metric_fn=my_rmse)
