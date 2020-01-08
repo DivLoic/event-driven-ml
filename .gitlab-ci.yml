@@ -18,6 +18,11 @@ cache: &gradle_cache
     - edml-trainer/build/libs/
   policy: pull-push
 
+.manual_submission: &manual_submission
+  except:
+    variables:
+      - $TRAIN_VERSION
+
 .prepare_build: &prepare_build
   before_script:
     - cat ./build/version.properties
@@ -26,6 +31,7 @@ cache: &gradle_cache
 
 version:
   stage: version
+  <<: *manual_submission
   cache:
     <<: *gradle_cache
   script:
@@ -39,6 +45,7 @@ version:
 
 test:
   stage: test
+  <<: *manual_submission
   cache:
     <<: *gradle_cache
   <<: *prepare_build
@@ -49,6 +56,7 @@ test:
 
 package:
   stage: package
+  <<: *manual_submission
   cache:
     <<: *gradle_cache
   <<: *prepare_build
@@ -68,6 +76,7 @@ package:
 
 train:
   stage: deploy-app/train
+  <<: *manual_submission
   cache:
     <<: *gradle_cache
   <<: *prepare_build
@@ -77,6 +86,30 @@ train:
     - cd ./out && unzip edml_trainer*
     - gcloud ai-platform jobs list
     - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
+  dependencies:
+    - version
+    - package
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - build/
+    expire_in: 3 week
+
+on-demand-train:
+  stage: deploy-app/train
+  only:
+    variables:
+    - $TRAIN_VERSION
+  cache:
+    <<: *gradle_cache
+  script:
+    - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
+    - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
+    - mkdir out && gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer-${PY_TRAIN_VERSION}-py3-none-any.whl ./out
+    - cd ./out && unzip edml_trainer*
+    - gcloud ai-platform jobs list
+    - mkdir -p ${CI_PROJECT_DIR}/build/
+    - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
   dependencies:
     - version
     - package
@@ -102,10 +135,12 @@ deploy-model:
     - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-model-producer
   dependencies:
     - train
+    - on-demand-train
   allow_failure: false
 
 deploy-app:
   stage: deploy-app/train
+  <<: *manual_submission
   cache:
     <<: *gradle_cache
   when: manual

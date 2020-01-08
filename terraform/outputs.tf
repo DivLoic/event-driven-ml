@@ -13,9 +13,3 @@ output "kafka-connect" {
            : "Kafka Connect has been disabled"}"
 
 }
-/*
-output "control-center" {
-
-  value = "https://${data.google_compute_global_address.control-center-ip.self_link}"
-
-}*/

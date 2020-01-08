@@ -38,7 +38,7 @@ TRAIN_NNSIZE="${TRAIN_NNSIZE:-20 10 5}"
 TRAIN_NEMBEDS="${TRAIN_NEMBEDS:-10}"
 TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-128}"
 TRAIN_EVALSTEP="${TRAIN_EVALSTEP:-1}"
-TRAIN_EXAMPLES="${TRAIN_EXAMPLES:-500}"
+TRAIN_EXAMPLES="${TRAIN_EXAMPLES:-500}" # 174000
 
 echo ""
 echo ""
@@ -49,9 +49,10 @@ echo "+  BUCKET = ${BUCKET}"
 echo "+  OUTDIR = ${OUTDIR}"
 echo "+  VERSION = ${VERSION}"
 echo "+  TRAIN_EVALSTEP = ${TRAIN_EVALSTEP}"
-echo "   TRAIN_NNSIZE = ${TRAIN_NNSIZE}"
-echo "   TRAIN_NEMBEDS = ${TRAIN_NEMBEDS}"
-echo "   TRAIN_BATCH_SIZE = ${TRAIN_BATCH_SIZE}"
+echo "+  TRAIN_NNSIZE = ${TRAIN_NNSIZE}"
+echo "+  TRAIN_NEMBEDS = ${TRAIN_NEMBEDS}"
+echo "+  TRAIN_BATCH_SIZE = ${TRAIN_BATCH_SIZE}"
+echo "+  TRAIN_EXAMPLES = ${TRAIN_EXAMPLES}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 gcloud ai-platform jobs submit training ${JOB_ID} \
@@ -75,8 +76,9 @@ gcloud ai-platform jobs describe ${JOB_ID}
 
 gcloud ai-platform jobs stream-logs ${JOB_ID}
 
-[ ! -d "$(dirname $SOURCE)/../build" ] && mkdir -p "$(dirname $SOURCE)/../build"
+echo "Saving model properties in directory ${CI_PROJECT_DIR}/build"
+mkdir -p ${CI_PROJECT_DIR}/build
 
-echo "VERSION_MODEL_ID=${JOB_ID}" >> "${CI_PROJECT_DIR:-.}"/build/version.properties
-echo "VERSION_MODEL_PATH=${JOB_DIR}" >> "${CI_PROJECT_DIR:-.}"/build/version.properties
-echo "VERSION_MODEL_VERSION=${VERSION}-${JOB_NUM}" >> "${CI_PROJECT_DIR:-.}"/build/version.properties
+echo "VERSION_MODEL_ID=${JOB_ID}" >> ${CI_PROJECT_DIR}/build/version.properties
+echo "VERSION_MODEL_PATH=${JOB_DIR}" >> ${CI_PROJECT_DIR}/build/version.properties
+echo "VERSION_MODEL_VERSION=${VERSION}-${JOB_NUM}" >> ${CI_PROJECT_DIR}/build/version.properties

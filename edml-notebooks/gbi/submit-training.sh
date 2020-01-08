@@ -36,6 +36,6 @@ gcloud ai-platform jobs submit training $JOB_NAME \
     --pattern="*" \
     --nembeds 10 \
     --nnsize 20 10 5 \
+    --batch-size=128 \
     --train-examples=174000 \
     --eval-steps=1 \
-    --batch-size=128
