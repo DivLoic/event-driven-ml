@@ -5,9 +5,3 @@ global:
 
 lowercaseOutputName: true
 lowercaseOutputLabelNames: true
-rules:
-
-  - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.*), topic=(.*), partition=(.*)><>records-lag: (.*)"
-    labels: {client: $1, topic: $2, partition: $3, type: lag}
-    name: "$2-RECORDS-LAG"
-    type: GAUGE

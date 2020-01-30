@@ -26,7 +26,7 @@ versioning {
 
     releaseMode = { nextTag, lastTag, currentTag, extension -> currentTag.substring(1) }
 
-    displayMode = { branchType, branchId, base, build, full, extension -> "${full}-${build}-${now()}" }
+    displayMode = { branchType, branchId, base, build, full, extension -> "${full}-${now()}-${build}" }
 }
 
 versionFile {

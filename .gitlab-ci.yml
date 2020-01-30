@@ -1,11 +1,27 @@
 image: gcr.io/event-driven-ml/edml-cicd-base:0.1.0
 
+variables:
+  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle/
+
 stages:
   - version
   - test
   - package
-  - train
-  - deploy
+  - deploy-app/train
+  - deploy-model
+
+cache: &gradle_cache
+  key: ${CI_PROJECT_NAME}
+  paths:
+    - .gradle/
+    - edml-trainer/virtualenv/
+    - edml-trainer/build/libs/
+  policy: pull-push
+
+.manual_submission: &manual_submission
+  except:
+    variables:
+      - $TRAIN_VERSION
 
 .prepare_build: &prepare_build
   before_script:
@@ -15,8 +31,12 @@ stages:
 
 version:
   stage: version
+  <<: *manual_submission
+  cache:
+    <<: *gradle_cache
   script:
     - ./gradlew versionFile
+    - cat ./build/version.properties
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
     paths:
@@ -25,14 +45,20 @@ version:
 
 test:
   stage: test
+  <<: *manual_submission
+  cache:
+    <<: *gradle_cache
   <<: *prepare_build
   script:
-    - ./gradlew test $PROJECT_VERSION
+    - ./gradlew test
   dependencies:
     - version
 
 package:
   stage: package
+  <<: *manual_submission
+  cache:
+    <<: *gradle_cache
   <<: *prepare_build
   script:
     - ./gradlew build jib -x test
@@ -45,36 +71,83 @@ package:
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
     paths:
-      - build/
       - edml-trainer/build/python-build/
     expire_in: 1 week
 
-deploy-app:
-  stage: deploy
-  <<: *prepare_build
-  when: manual
-  only:
-    - trunk
-  script:
-    - echo "I'm deploying now"
-
 train:
-  stage: train
+  stage: deploy-app/train
+  <<: *manual_submission
+  cache:
+    <<: *gradle_cache
   <<: *prepare_build
   script:
-    - echo "Now I'm training ${PY_PROJECT_VERSION} model"
-    - mv ./edml-trainer/build/python-build/trainer*${PY_PROJECT_VERSION}*.whl ./out
-    #- gsutil cp gs://edml/pypi/edml-trainer/edml_trainer*${PROJECT_VERSION}-py2-none-any.whl ./out
-    - cd ./out && unzip .out/edml_trainer*${PY_PROJECT_VERSION}-py2-none-any.whl
-    - ll ./out/*
+    - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
+    - mkdir ./out && mv ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl ./out
+    - cd ./out && unzip edml_trainer*
     - gcloud ai-platform jobs list
+    - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
   dependencies:
+    - version
     - package
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - build/
+    expire_in: 3 week
+
+on-demand-train:
+  stage: deploy-app/train
+  only:
+    variables:
+    - $TRAIN_VERSION
+  cache:
+    <<: *gradle_cache
+  script:
+    - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
+    - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
+    - mkdir out && gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer-${PY_TRAIN_VERSION}-py3-none-any.whl ./out
+    - cd ./out && unzip edml_trainer*
+    - gcloud ai-platform jobs list
+    - mkdir -p ${CI_PROJECT_DIR}/build/
+    - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
+  dependencies:
+    - version
+    - package
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - build/
+    expire_in: 3 week
 
 deploy-model:
   when: manual
   only:
     - trunk
-  stage: deploy
+  stage: deploy-model
+  <<: *prepare_build
+  script:
+    - export TMP_DIR="${TMP_MODEL_DIR:-/tmp/tensorflow-streams/}"
+    - export BUCKET=$(cat ./build/version.properties | grep -i model_path | awk -F= '{print $2}')
+    - export VERSION=$(cat ./build/version.properties | grep -i model_version | awk -F= '{print $2}')
+    - mkdir -p ${TMP_DIR}/${VERSION} && mkdir out && cd out
+    - gsutil -m cp -R "${BUCKET}/model/export/*/" .
+    - mv exporter/$(ls exporter | sort -nr | head -1)/* ${TMP_DIR}/${VERSION}/
+    - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-model-producer
+  dependencies:
+    - train
+    - on-demand-train
+  allow_failure: false
+
+deploy-app:
+  stage: deploy-app/train
+  <<: *manual_submission
+  cache:
+    <<: *gradle_cache
+  when: manual
+  only:
+    - trunk
+  <<: *prepare_build
   script:
     - echo "I'm deploying now"
+  dependencies:
+    - version

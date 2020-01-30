@@ -110,7 +110,7 @@ resource "google_compute_instance_template" "rest_proxy" {
 
   network_interface {
 
-    subnetwork = "${google_compute_subnetwork.private_subnet.self_link}"
+    subnetwork = google_compute_subnetwork.private_subnet.self_link
 
     access_config {}
 
@@ -227,7 +227,7 @@ resource "google_compute_instance_template" "kafka_connect" {
 
   network_interface {
 
-    subnetwork = "${google_compute_subnetwork.private_subnet.self_link}"
+    subnetwork = google_compute_subnetwork.private_subnet.self_link
 
     access_config {}
 
@@ -238,125 +238,6 @@ resource "google_compute_instance_template" "kafka_connect" {
 
 }
 
-###########################################
-############ KSQL Server LBR ##############
-###########################################
-
-resource "google_compute_global_address" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-global-address-${var.global_prefix}"
-
-}
-
-resource "google_compute_global_forwarding_rule" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-global-forwarding-rule-${var.global_prefix}"
-  target = "${google_compute_target_http_proxy.ksql_server[count.index].self_link}"
-  ip_address = "${google_compute_global_address.ksql_server[count.index].self_link}"
-  port_range = "80"
-}
-
-resource "google_compute_target_http_proxy" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-http-proxy-${var.global_prefix}"
-  url_map = "${google_compute_url_map.ksql_server[count.index].self_link}"
-
-}
-
-resource "google_compute_url_map" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-url-map-${var.global_prefix}"
-  default_service = "${google_compute_backend_service.ksql_server[count.index].self_link}"
-
-}
-
-resource "google_compute_backend_service" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-backend-service-${var.global_prefix}"
-  port_name = "http"
-  protocol = "HTTP"
-  timeout_sec = 5
-
-  backend {
-
-      group = "${google_compute_region_instance_group_manager.ksql_server[count.index].instance_group}"
-  }
-
-  health_checks = ["${google_compute_http_health_check.ksql_server[count.index].self_link}"]
-}
-
-resource "google_compute_region_instance_group_manager" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-instance-group-${var.global_prefix}"
-  instance_template = "${google_compute_instance_template.ksql_server[count.index].self_link}"
-  base_instance_name = "ksql-server"
-  region = "${var.gcp_region}"
-  distribution_policy_zones = "${var.gcp_availability_zones}"
-  target_size = "${var.instance_count["ksql_server"]}"
-
-  named_port {
-
-    name = "http"
-    port = 8088
-
-  }
-
-}
-
-resource "google_compute_http_health_check" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-http-health-check-${var.global_prefix}"
-  request_path = "/info"
-  port = "8088"
-  healthy_threshold = 3
-  unhealthy_threshold = 3
-  check_interval_sec = 5
-  timeout_sec = 3
-
-}
-
-resource "google_compute_instance_template" "ksql_server" {
-
-  count = "${var.instance_count["ksql_server"] > 0 ? var.instance_count["ksql_server"] : 0}"
-
-  name = "ksql-server-template-${var.global_prefix}"
-  machine_type = "n1-standard-8"
-
-  metadata_startup_script = "${data.template_file.ksql_server_bootstrap.rendered}"
-
-  disk {
-
-    source_image = "centos-7"
-    disk_size_gb = 300
-
-  }
-
-  network_interface {
-
-    subnetwork = "${google_compute_subnetwork.private_subnet.self_link}"
-
-    access_config {}
-
-  }
-
-  tags = [
-    "ksql-server-${var.global_prefix}"]
-
-}
 
 ###########################################
 ########### Control Center LBR ############
@@ -466,7 +347,7 @@ resource "google_compute_instance_template" "control_center" {
 
   network_interface {
 
-    subnetwork = "${google_compute_subnetwork.private_subnet.self_link}"
+    subnetwork = google_compute_subnetwork.private_subnet.self_link
 
     access_config {}
 

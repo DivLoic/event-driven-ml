@@ -44,5 +44,30 @@ EOF
 
 ########### Enable and Start ###########
 
+########### Demo scripts ###########
+yum upgrade -y && yum update -y
+yum install -y python3.5 python3-dev python3-pip git curl
+pip3 install doitlive
+
+echo "alias ksql='/etc/confluent/confluent-5.3.1/bin/ksql'" >> /root/.bashrc
+echo "alias predictions='doitlive play -q /root/.predictions'" >> /root/.bashrc
+echo "alias corrections='doitlive play -q /root/.corrections'" >> /root/.bashrc
+
+cat > /root/.predictions <<- "EOF"
+#doitlive prompt: {dir.cyan} {hostname.green} ->
+#doitlive alias: ksql="/etc/confluent/confluent-5.3.1/bin/ksql"
+echo "SHOW STREAMS;" | ksql
+echo "DESCRIBE PREDICTION;" | ksql
+echo "SELECT SUBSTRING(ROWKEY, 0, 10), VERSION, PREDICTION FROM PREDICTION;" | ksql
+EOF
+
+cat > /root/.corrections <<- "EOF"
+#doitlive prompt: {dir.cyan} {hostname.green} ->
+#doitlive alias: ksql="/etc/confluent/confluent-5.3.1/bin/ksql"
+echo "SELECT TIMESTAMPTOSTRING(DROPOFF_DATETIME, 'yyyy-MM-dd HH:mm:ss.SSS', 'Europe/Paris'), VERSION, TRIP_DURATION, PREDICTION FROM SCORING;" | ksql
+EOF
+
+########### Demo scripts ###########
+
 systemctl enable ksql-server
 systemctl start ksql-server

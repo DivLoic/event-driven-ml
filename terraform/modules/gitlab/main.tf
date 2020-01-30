@@ -62,6 +62,7 @@ resource "google_compute_instance" "gitlab-runner" {
   }
   boot_disk {
     initialize_params {
+      size = 50
       image = "ubuntu-1804-bionic-v20191002"
     }
   }
