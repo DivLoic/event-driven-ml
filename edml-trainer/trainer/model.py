@@ -1,8 +1,15 @@
 import tensorflow as tf
+import tensorflow_io as tfio
+from tensorflow_io.bigquery import BigQueryClient
 
 # Read data
-BUCKET = None
-PATTERN = "*"
+# BUCKET = None
+# PATTERN = "*"
+
+PROJECT_ID = "event-driven-ml"
+DATASET_GCP_PROJECT_ID = "event-driven-ml"
+DATASET_ID = "new_york_taxi_trips"
+TABLE_ID = "tlc_yellow_trips_2018"
 
 CSV_COLUMNS = ["uuid", "dayofweek", "hourofday", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "trip_duration"]
 LABEL_COLUMN = "trip_duration"
@@ -28,23 +35,31 @@ tf.compat.v1.logging.set_verbosity(v=VERBOSITY)
 
 # Create an input function reading a file using the Dataset API
 # Then provide the results to the Estimator API
-def read_dataset(prefix, mode, batch_size):
+def read_dataset(suffix, mode, batch_size):
     def _input_fn():
-        def decode_csv(records):
-            columns = tf.io.decode_csv(records, record_defaults=DEFAULTS)
-            features = dict(zip(CSV_COLUMNS, columns))
-            label = features.pop(LABEL_COLUMN)
+        client = BigQueryClient()
+        read_session = client.read_session(
+            parent="projects/" + PROJECT_ID,
+            project_id=DATASET_GCP_PROJECT_ID,
+            table_id="{}_{}".format(TABLE_ID, suffix), 
+            dataset_id=DATASET_ID,
+            selected_fields=CSV_COLUMNS,
+            output_types=[tf.string, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.int64],
+            requested_streams=10
+        )
+        
+        def decode_row(records):
+            features = records
+            label = tf.cast(features.pop(LABEL_COLUMN), tf.float32)
             return features, label
+<<<<<<< Updated upstream
 
         # filename
         file_name = 'gs://{}/data/taxi-trips/{}/tlc_yellow_trips_2018-{}.csv'.format(BUCKET, prefix, PATTERN)
+=======
+>>>>>>> Stashed changes
         
-        # Create list of files that match pattern
-        file_list = tf.io.gfile.glob(file_name)
-
-        # Create dataset from file list
-        dataset = (tf.data.TextLineDataset(file_list, compression_type="GZIP")  # Read text file
-                   .map(decode_csv))  # Transform each elem by applying decode_csv fn
+        dataset = read_session.parallel_read_rows(sloppy=True).map(decode_row)
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             num_epochs = None  # indefinitely
@@ -152,7 +167,7 @@ def serving_input_receiver_fn():
         'hourofday': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
         'pickup_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="pickup_zone_name"),
         'dropoff_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="dropoff_zone_name"),
-        'passenger_count': tf.compat.v1.placeholder(dtype=tf.float32, shape=[None], name="passenger_count"),
+        'passenger_count': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="passenger_count"),
         KEY_COLUMN: tf.compat.v1.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
     }
     
