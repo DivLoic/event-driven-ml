@@ -52,12 +52,6 @@ def read_dataset(suffix, mode, batch_size):
             features = records
             label = tf.cast(features.pop(LABEL_COLUMN), tf.float32)
             return features, label
-<<<<<<< Updated upstream
-
-        # filename
-        file_name = 'gs://{}/data/taxi-trips/{}/tlc_yellow_trips_2018-{}.csv'.format(BUCKET, prefix, PATTERN)
-=======
->>>>>>> Stashed changes
         
         dataset = read_session.parallel_read_rows(sloppy=True).map(decode_row)
 
