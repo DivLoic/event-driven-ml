@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edml-grafana
+  namespace: default
+  labels:
+    app: edml-grafana
+spec:
+  selector:
+    matchLabels:
+      app: edml-grafana
+  template:
+    metadata:
+      labels:
+        app: edml-grafana
+    spec:
+      containers:
+        - name: edml-grafana
+          image: grafana/grafana:latest
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+          ports:
+            - name: grafana-port
+              containerPort: 3000
+          volumeMounts:
+            - name: dashboards-volume
+              mountPath: /etc/grafana/dashboards/
+            - name: provisioning-dashboards-volume
+              mountPath: /etc/grafana/provisioning/dashboards/
+            - name: provisioning-datasources-volume
+              mountPath: /etc/grafana/provisioning/datasources/
+            - name: provisioning-notifiers-volume
+              mountPath: /etc/grafana/provisioning/notifiers/
+
+      volumes:
+        - name: dashboards-volume
+          configMap:
+            name: edml-grafana-dashboards
+        - name: provisioning-dashboards-volume
+          configMap:
+            name: edml-grafana-provisioning-dashboards
+        - name: provisioning-datasources-volume
+          configMap:
+            name: edml-grafana-provisioning-datasources
+        - name: provisioning-notifiers-volume
+          configMap:
+            name: edml-grafana-provisioning-notifiers
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: grafana
+  labels:
+    app: edml-grafana
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: grafana-ip
+spec:
+  backend:
+    servicePort: 80
+    serviceName: edml-grafana-service
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edml-grafana-service
+  namespace: default
+  labels:
+    app: edml-grafana
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3000
+  selector:
+    app: edml-grafana

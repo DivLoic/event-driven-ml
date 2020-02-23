@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 1s
+  scrape_timeout: 1s
+
+  scrape_configs:
+    - job_name: 'edml-serving'
+      scrape_interval: 1s
+      static_configs:
+        - targets: ['edml-serving-service:80']
+
+    - job_name: 'edml-scoring'
+      scrape_interval: 1s
+      static_configs:
+        - targets: ['edml-scoring-service:80']
+
+    - job_name: 'replay-pickup'
+      scrape_interval: 1s
+      static_configs:
+        - targets: ['replay-pickup-service:80']
+
+    - job_name: 'replay-dropoff'
+      scrape_interval: 1s
+      static_configs:
+        - targets: ['replay-dropoff-service:80']
