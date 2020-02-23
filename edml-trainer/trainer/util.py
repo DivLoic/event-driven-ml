@@ -1,20 +1,18 @@
 import tensorflow as tf
+import tensorflow_io as tfio
+from tensorflow_io.bigquery import BigQueryClient
 
-# CATEGORICAL_STR_FEATURE_KEYS = [
-#     "pickup_zone_name",
-#     "dropoff_zone_name"
-# ]
+PROJECT_ID = "event-driven-ml"
+DATASET_GCP_PROJECT_ID = "event-driven-ml"
+DATASET_ID = "new_york_taxi_trips"
+TABLE_ID = "tlc_yellow_trips_2018"
 
-# CATEGORICAL_NUM_FEATURE_KEYS = [
-#     "dayofweek", 
-#     "hourofday"
-# ]
+CSV_COLUMNS = ["uuid", "dayofweek", "hourofday", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "trip_duration"]
+LABEL_COLUMN = "trip_duration"
+KEY_COLUMN = "uuid"
 
-# NUMERICAL_FEATURE_KEYS = [
-#     "passenger_count"
-# ]
-
-# LABEL_KEY = "trip_duration"
+# Set default values for each CSV column
+DEFAULTS = [['no_key'], [1], [0], [""], [""], [1], []]
 
 NEMBEDS = 3
 
@@ -80,6 +78,39 @@ _CATEGORICAL_NUM_BUCKETS = {
     "hourofday": 24
 }
 
+# Create an input function reading a file using the Dataset API
+# Then provide the results to the Estimator API
+def read_dataset(suffix, mode, batch_size):
+    def _input_fn():
+        client = BigQueryClient()
+        read_session = client.read_session(
+            parent="projects/" + PROJECT_ID,
+            project_id=DATASET_GCP_PROJECT_ID,
+            table_id="{}_{}".format(TABLE_ID, suffix), 
+            dataset_id=DATASET_ID,
+            selected_fields=CSV_COLUMNS,
+            output_types=[tf.string, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.int64],
+            requested_streams=10
+        )
+        
+        def decode_row(records):
+            features = records
+            label = tf.cast(features.pop(LABEL_COLUMN), tf.float32)
+            return features, label
+        
+        dataset = read_session.parallel_read_rows(sloppy=True).map(decode_row)
+
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            num_epochs = None  # indefinitely
+            dataset = dataset.shuffle(buffer_size=1000*batch_size, seed=1234)
+        else:
+            num_epochs = 1  # end-of-input after this
+
+        dataset = dataset.repeat(num_epochs).batch(batch_size)
+        return dataset
+    return _input_fn
+
+
 
 def get_wide_deep():
     
@@ -120,3 +151,21 @@ def get_wide_deep():
     ]
     
     return wide, deep
+
+# Serving input receiver function
+def serving_input_receiver_fn():
+    receiver_tensors = {
+        'dayofweek': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
+        'hourofday': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
+        'pickup_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="pickup_zone_name"),
+        'dropoff_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="dropoff_zone_name"),
+        'passenger_count': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="passenger_count"),
+        KEY_COLUMN: tf.compat.v1.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
+    }
+    
+    features = {
+        key: tf.expand_dims(tensor, -1)
+        for key, tensor in receiver_tensors.items()
+    }
+        
+    return tf.estimator.export.ServingInputReceiver(features=features, receiver_tensors=receiver_tensors)
