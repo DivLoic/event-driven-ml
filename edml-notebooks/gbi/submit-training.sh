@@ -17,7 +17,7 @@ echo $JOB_DIR
 REGION="europe-west1"
 
 PYTHON_VERSION=3.5
-RUNTIME_VERSION=1.14
+RUNTIME_VERSION=1.15
 
 OUTDIR=gs://$BUCKET/ai-platform/models
 echo $OUTDIR
@@ -33,7 +33,6 @@ gcloud ai-platform jobs submit training $JOB_NAME \
     -- \
     --bucket=$BUCKET \
     --output-dir=$OUTDIR \
-    --pattern="*" \
     --nembeds 10 \
     --nnsize 20 10 5 \
     --batch-size=128 \
