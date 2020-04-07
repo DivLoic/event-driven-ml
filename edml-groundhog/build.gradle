@@ -55,6 +55,9 @@ dependencies {
     compile group: 'com.google.cloud', name: 'google-cloud-bigquery', version: '1.98.0'
 
     compile group: 'io.prometheus.jmx', name: 'jmx_prometheus_javaagent', version: '0.12.0'
+
+    testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.1.0'
+    testCompile group: 'org.scalactic', name: 'scalactic_2.12', version: '3.1.0'
 }
 
 compileScala {
@@ -65,3 +68,13 @@ compileScala {
             '-Xmacro-settings:materialize-derivations'
     ]
 }
+
+task spec(dependsOn: ['compileTestScala'], type: JavaExec) {
+    group = 'verification'
+    description = 'Runs the scala tests.'
+    main = 'org.scalatest.tools.Runner'
+    args = ['-R', 'build/classes/scala/test', '-o']
+    classpath = sourceSets.test.runtimeClasspath
+}
+
+test.dependsOn spec

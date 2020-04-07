@@ -4,11 +4,11 @@
   "namespace": "fr.xebia.gbildi",
   "fields": [
     {
-      "name": "ziped_model",
-      "type": "bytes"
+      "name": "version",
+      "type": "string"
     },
     {
-      "name": "version",
+      "name": "gcs_path",
       "type": "string"
     },
     {

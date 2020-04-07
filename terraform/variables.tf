@@ -8,40 +8,37 @@ variable "gcp_project" {}
 
 # ~ ⛅ ~ # Confluent Cloud Vars # ~ ⛅ ~ #
 
-variable "ccloud_broker_list" {}
+variable "confluent_cloud_conf" {
+  type = "map"
 
-variable "ccloud_access_key" {}
-
-variable "ccloud_secret_key" {}
-
-variable "ccloud_sr_access_key" {}
-
-variable "ccloud_sr_secret_key" {}
-
-variable "ccloud_schema_registry_url" {}
-
-variable "ccloud_schema_registry_basic_auth" {}
+  default = {
+    ccloud_broker_list                = null
+    ccloud_access_key                 = null
+    ccloud_secret_key                 = null
+    ccloud_sr_access_key              = null
+    ccloud_sr_secret_key              = null
+    ccloud_schema_registry_url        = null
+    ccloud_schema_registry_basic_auth = null
+  }
+}
 
 variable "global_prefix" {
-  default = "ccloud-tools"
+  default = "edml"
 }
 
 variable "gcp_region" {
-  default = "europe-west1"
+  default = "europe-west2"
 }
 
 variable "gcp_availability_zones" {
-  type = "list"
-  default = ["europe-west1-b"]
+  type    = "list"
+  default = ["europe-west2-b"]
 }
 
 variable "instance_count" {
   type = "map"
   default = {
-    "rest_proxy"       =  0
-    "kafka_connect"    =  1
-    "ksql_server"      =  1
-    "control_center"   =  1
+    "ksql_server" = 1
   }
 }
 
@@ -51,4 +48,12 @@ variable "confluent_platform_location" {
 
 variable "confluent_home_value" {
   default = "/etc/confluent/confluent-5.3.1"
+}
+
+variable "github_user" {}
+
+variable "github_token" {}
+
+variable "ai_platform_gitbranch" {
+  default = ""
 }

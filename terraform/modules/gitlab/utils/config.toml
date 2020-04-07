@@ -6,10 +6,10 @@ check_interval = 0
 
 [[runners]]
   name = "docker-runner"
-  url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
-  token = "J1uijMavsnpzjNyCsvaQ"
+  url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
+  token = "Nv1-MLwzrzSjvEzhdsgV"
   executor = "docker"
-  clone_url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
+  clone_url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
   [runners.custom_build_dir]
   [runners.docker]
     tls_verify = false
@@ -26,10 +26,10 @@ check_interval = 0
 
 [[runners]]
   name = "docker-runner"
-  url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
-  token = "dYpg6XNMTT7cfbcnGKwe"
+  url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
+  token = "uyyLxY8dtUAw6B6jN3kW"
   executor = "docker"
-  clone_url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
+  clone_url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
   [runners.custom_build_dir]
   [runners.docker]
     tls_verify = false
@@ -46,10 +46,10 @@ check_interval = 0
 
 [[runners]]
   name = "docker-runner"
-  url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
-  token = "uADEf4TwRNpKs_U7mv4H"
+  url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
+  token = "zxz6LsosHh9gnsFfSFQN"
   executor = "docker"
-  clone_url = "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/"
+  clone_url = "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/"
   [runners.custom_build_dir]
   [runners.docker]
     tls_verify = false
