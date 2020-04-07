@@ -3,6 +3,7 @@ package fr.xebia.gbildi
 import java.util.Properties
 
 import cats.implicits._
+import com.spotify.zoltar.tf.TensorFlowModel
 import fr.xebia.gbildi.config.{Configs, ServingConfig}
 import fr.xebia.gbildi.processor.{ModelReceiver, PredictorTransformer}
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
@@ -21,8 +22,6 @@ import scala.collection.JavaConverters._
  * Created by loicmdivad.
  */
 object Serving extends App with Configs {
-
-  val bundleKey: String = "tensorflow.saved.model.path"
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -68,9 +67,10 @@ object Serving extends App with Configs {
 
     val applyedModel: KStream[KeyClass, TripDurationPrediction] = pickups.transformValues(
       () => new PredictorTransformer(
-        ModelKey("edml"),
         config.modelStore.toLowerCase(),
-        config.tensorflowConfig.getString(bundleKey)
+        "predict",
+        ModelKey("edml"),
+        TensorFlowModel.Options.builder().tags("serve" :: Nil asJava).build()
       )
     )
 
