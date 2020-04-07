@@ -30,7 +30,7 @@ data:
         static_configs:
         - targets: ['replay-dropoff-service:80']
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: edml-prometheus
@@ -49,6 +49,13 @@ spec:
       containers:
         - name: edml-prometheus
           image: prom/prometheus:v2.8.1
+          readinessProbe:
+            httpGet:
+              path: /graph
+              port: 9090
+          ports:
+            - name: prometheus-port
+              containerPort: 9090
           volumeMounts:
             - name: edml-prometheus-conf
               mountPath: /etc/config
@@ -67,11 +74,25 @@ metadata:
   labels:
     app: edml-prometheus
 spec:
+  type: NodePort
   ports:
-    - protocol: TCP
-      port: 80
+    - port: 80
       targetPort: 9090
   selector:
     app: edml-prometheus
-  type: LoadBalancer
-  loadBalancerIP:
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: prometheus
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: prometheus-ip
+  labels:
+    app: edml-prometheus
+spec:
+  rules:
+    - host: prometheus.xebilolo.com
+  backend:
+    serviceName: edml-prometheus-service
+    servicePort: 80
