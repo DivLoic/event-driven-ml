@@ -14,8 +14,8 @@ provider "google" {
 
 resource "google_container_cluster" "apps-kube" {
   name               = "edml-apps-kube"
-  initial_node_count = 5
   location           = "europe-west2-b"
+  initial_node_count = 5
 }
 
 module "gitlab" {
@@ -51,8 +51,8 @@ module "jupyter" {
   notebook_name = "edml-jupyter"
   machine_type  = "n1-standard-8"
   disk_size     = "500"
-  github_user = var.github_user
-  github_token = var.github_token
+  github_user   = var.github_user
+  github_token  = var.github_token
   git_branch    = var.ai_platform_gitbranch
 }
 

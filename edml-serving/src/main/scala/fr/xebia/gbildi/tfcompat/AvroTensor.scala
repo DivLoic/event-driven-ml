@@ -3,7 +3,6 @@ package fr.xebia.gbildi.tfcompat
 import java.lang
 import java.nio.{FloatBuffer, IntBuffer, LongBuffer}
 
-import org.apache.avro.util.Utf8
 import org.tensorflow.{Tensor, Tensors}
 
 /**

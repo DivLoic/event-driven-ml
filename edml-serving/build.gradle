@@ -75,4 +75,4 @@ task spec(dependsOn: ['compileTestScala'], type: JavaExec) {
 }
 
 test.dependsOn spec
-jib.dependsOn build
+tasks.jib.dependsOn build

@@ -32,8 +32,6 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards/
             - name: provisioning-datasources-volume
               mountPath: /etc/grafana/provisioning/datasources/
-            - name: provisioning-notifiers-volume
-              mountPath: /etc/grafana/provisioning/notifiers/
 
       volumes:
         - name: dashboards-volume
@@ -45,9 +43,6 @@ spec:
         - name: provisioning-datasources-volume
           configMap:
             name: edml-grafana-provisioning-datasources
-        - name: provisioning-notifiers-volume
-          configMap:
-            name: edml-grafana-provisioning-notifiers
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress

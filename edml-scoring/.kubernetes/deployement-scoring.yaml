@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: edml-scoring-app
@@ -25,7 +25,7 @@ spec:
             - name: SCORING_TOPIC
               value: TRIP-DURATION-SCORE
             - name: CORRECTION_TOPIC
-              value: TRIP-DURATION-RESULT
+              value: TRIP_DURATION_RESULT
             - name: APPLICATION_ID
               value: EDML-TRIP-SCORING
             - name: API_KEY

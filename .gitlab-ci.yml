@@ -1,4 +1,4 @@
-image: gcr.io/event-driven-ml/edml-cicd-base:0.1.0
+image: gcr.io/event-driven-ml/edml-cicd-base:0.1.1
 
 variables:
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle/
@@ -132,7 +132,7 @@ deploy-model:
     - mkdir -p ${TMP_DIR}/${VERSION} && mkdir out && cd out
     - gsutil -m cp -R "${BUCKET}/model/export/*/" .
     - mv exporter/$(ls exporter | sort -nr | head -1)/* ${TMP_DIR}/${VERSION}/
-    - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-model-producer
+    - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-cicd-base
   dependencies:
     - train
     - on-demand-train

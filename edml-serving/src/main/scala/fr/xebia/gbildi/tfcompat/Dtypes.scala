@@ -2,7 +2,6 @@ package fr.xebia.gbildi.tfcompat
 
 import org.apache.avro.util.Utf8
 
-import scala.reflect.runtime.universe._
 import scala.util.Try
 
 /**

@@ -1,0 +1,14 @@
+
+# # config file version
+apiVersion: 1
+
+notifiers:
+  - name: Glo / Edml Slack
+    uid: 1
+    type: slack
+    org_name: Main Org.
+    is_default: false
+    settings:
+      iconEmoji: 🤖
+      uploadImage: true
+      url: https://hooks.slack.com/services/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
