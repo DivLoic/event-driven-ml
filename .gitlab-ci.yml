@@ -126,13 +126,10 @@ deploy-model:
   stage: deploy-model
   <<: *prepare_build
   script:
-    - export TMP_DIR="${TMP_MODEL_DIR:-/tmp/tensorflow-streams/}"
     - export BUCKET=$(cat ./build/version.properties | grep -i model_path | awk -F= '{print $2}')
     - export VERSION=$(cat ./build/version.properties | grep -i model_version | awk -F= '{print $2}')
-    - mkdir -p ${TMP_DIR}/${VERSION} && mkdir out && cd out
-    - gsutil -m cp -R "${BUCKET}/model/export/*/" .
-    - mv exporter/$(ls exporter | sort -nr | head -1)/* ${TMP_DIR}/${VERSION}/
-    - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-cicd-base
+    - export EXPORT=$(gsutil ls ${BUCKET}/model/export/exporter/ | sort | tail -1)
+    - MODEL_VERSION=${VERSION} MODEL_PATH=${EXPORT}/ /app/bin/edml-cicd-base
   dependencies:
     - train
     - on-demand-train
