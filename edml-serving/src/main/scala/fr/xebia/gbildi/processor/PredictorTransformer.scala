@@ -2,19 +2,22 @@ package fr.xebia.gbildi.processor
 
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
-import java.nio.{FloatBuffer, LongBuffer}
 import java.time.Duration
 import java.util.UUID
 
 import fr.xebia.gbildi._
+import fr.xebia.gbildi.tfcompat.AvroTensor.AvroTensorSyntax._
+import fr.xebia.gbildi.tfcompat.Dtypes.projectDtype
+import fr.xebia.gbildi.tfcompat.ScalarTensor.ScalarTensorSyntax._
 import org.apache.kafka.common.header.internals.RecordHeader
 import org.apache.kafka.streams.kstream.ValueTransformer
 import org.apache.kafka.streams.processor.{ProcessorContext, PunctuationType}
 import org.apache.kafka.streams.state.KeyValueStore
 import org.slf4j.LoggerFactory
-import org.tensorflow.{SavedModelBundle, Tensor, Tensors}
+import org.tensorflow.SavedModelBundle
 import org.zeroturnaround.zip.ZipUtil
 
+import scala.collection.JavaConverters._
 import scala.reflect.io.File
 
 /**
@@ -45,35 +48,27 @@ class PredictorTransformer(modelSelector: ModelKey, modelStoreName: String, bund
     checkCurrent.foreach(this.updateModel)
   }
 
-
   override def transform(value: TaxiTripPickup): TripDurationPrediction = {
     checkCurrent.foreach(this.updateModel)
 
     Option(this.bundle).map { bundle =>
 
-      val dayofweek = Tensor.create(Array(1L), LongBuffer.wrap(Array(value.get("dayofweek").toString.toLong)))
-      val hourofday = Tensor.create(Array(1L), LongBuffer.wrap(Array(value.get("hourofday").toString.toLong)))
-      val pickupBorough = Tensors.create(Array(value.get("pickup_zone_name").toString.getBytes))
-      val dropoffBorough = Tensors.create(Array(value.get("dropoff_zone_name").toString.getBytes))
-      val passengerCount = Tensor.create(Array(1L), FloatBuffer.wrap(Array(value.get("passenger_count").toString.toFloat)))
-
-      val result: Tensor[java.lang.Float] = bundle.session().runner()
-        .feed("dayofweek", dayofweek)
-        .feed("hourofday", hourofday)
-        .feed("pickup_zone_name", pickupBorough)
-        .feed("dropoff_zone_name", dropoffBorough)
-        .feed("passenger_count", passengerCount)
-
-        .fetch("add")
-
-        .run().get(0).expect(classOf[java.lang.Float])
-
-      val buffer = FloatBuffer.allocate(1)
-      result.writeTo(buffer)
+      val prediction: Option[Float] = this.model
+        .inputs
+        .foldLeft(this.bundle.session().runner())((session, feature) => {
+          session.feed(feature.name, projectDtype(feature.`type`, value.get(feature.name)).castTensor)
+        })
+        .fetch(this.model.output.name)
+        .run()
+        .asScala
+        .head
+        .expect(classOf[java.lang.Float])
+        .headOption
+        .map(Float2float)
 
       this.context.headers.add(new RecordHeader("version", this.model.version.getBytes))
 
-      TripDurationPrediction(buffer.array().headOption.getOrElse(-1), version = this.model.version)
+      TripDurationPrediction(prediction.getOrElse(-1F), version = this.model.version)
 
     }.getOrElse {
       logger debug "Fail to predict duration trip due to missing model"
@@ -115,5 +110,4 @@ class PredictorTransformer(modelSelector: ModelKey, modelStoreName: String, bund
     val directory = File(s"$root/$group/$app")
     directory.deleteRecursively()
   }
-
 }
