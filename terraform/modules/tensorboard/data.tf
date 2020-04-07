@@ -8,6 +8,6 @@ data "google_compute_global_address" "tensorboard-ip" {
   name = "tensorboard-ip"
 }
 
-data "template_file" "tensorboard-startup" {
+data "template_file" "tensorboard_startup" {
   template = file("${path.module}/utils/tensorboard-startup.sh")
 }
