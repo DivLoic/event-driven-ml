@@ -2,8 +2,8 @@
 
 sudo gitlab-runner register \
   --non-interactive \
-  --url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
-  --clone-url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
+  --url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
+  --clone-url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
   --registration-token ${TOKEN} \
   --executor "docker" \
   --docker-image gcr.io/event-driven-ml/edml-cicd:0.1.0 \
@@ -15,8 +15,8 @@ sudo gitlab-runner register \
 
 sudo gitlab-runner register \
   --non-interactive \
-  --url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
-  --clone-url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
+  --url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
+  --clone-url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
   --registration-token ${TOKEN} \
   --executor "docker" \
   --docker-image gcr.io/event-driven-ml/edml-cicd:0.1.0 \
@@ -28,8 +28,8 @@ sudo gitlab-runner register \
 
 sudo gitlab-runner register \
   --non-interactive \
-  --url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
-  --clone-url "http://gitlab.europe-west1-b.c.event-driven-ml.internal:80/" \
+  --url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
+  --clone-url "http://gitlab.europe-west2-b.c.event-driven-ml.internal:80/" \
   --registration-token ${TOKEN} \
   --executor "docker" \
   --docker-image gcr.io/event-driven-ml/edml-cicd:0.1.0 \
