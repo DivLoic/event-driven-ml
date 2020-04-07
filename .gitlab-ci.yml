@@ -1,4 +1,4 @@
-image: gcr.io/event-driven-ml/edml-cicd-base:0.1.1
+image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle/
