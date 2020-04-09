@@ -65,7 +65,6 @@ gcloud ai-platform jobs submit training ${JOB_ID} \
      -- \
      --bucket=${BUCKET} \
      --output-dir=${OUTDIR} \
-     --pattern="*" \
      --nembeds ${TRAIN_NEMBEDS} \
      --nnsize ${TRAIN_NNSIZE} \
      --batch-size=${TRAIN_BATCH_SIZE} \

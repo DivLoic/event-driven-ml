@@ -1,10 +1,10 @@
 import argparse
+import tensorflow as tf
 
 from . import model
 
-
-if __name__ == '__main__':
-
+def parse_arguments():
+    
     parser = argparse.ArgumentParser()
 
     # Input Arguments
@@ -21,11 +21,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--pattern',
-        help='Pattern to read file partitions',
-        default='*'
-    )
-    parser.add_argument(
         '--batch-size',
         help='Number of examples to compute gradient over',
         type=int,
@@ -38,7 +33,7 @@ if __name__ == '__main__':
              'If this is more than actual # of examples available, it cycles through them. '
              'So specifying 1000 here when you have only 100k examples makes this 10 epochs.',
         type=int,
-        default=435000
+        default=435000 #174000
     )
 
     parser.add_argument(
@@ -48,6 +43,15 @@ if __name__ == '__main__':
         default=None,
         type=int
     )
+    
+    
+    parser.add_argument(
+        '--train-steps',
+        help='TODO',
+        default=10000,
+        type=int
+    )
+    
     parser.add_argument(
         '--nnsize',
         help='Hidden layer sizes to use for DNN feature columns -- provide space-separated layers',
@@ -88,13 +92,7 @@ if __name__ == '__main__':
         default='INFO')
 
     args = parser.parse_args()
-    arguments = args.__dict__
 
-    # Unused args provided by service
-    arguments.pop('job_dir', None)
-    arguments.pop('job-dir', None)
-
-#     output_dir = arguments['output_dir']
 #     # Append trial_id to path if we are doing hptuning
 #     # This code can be removed if you are not using hyperparameter tuning
 #     output_dir = os.path.join(
@@ -103,21 +101,24 @@ if __name__ == '__main__':
 #             os.environ.get('TF_CONFIG', '{}')
 #         ).get('task', {}).get('trail', '')
 #     )
+    
+    return args
 
-    # assign the arguments to the model variables
-    output_dir = arguments.pop('output_dir')
-    model.BUCKET = arguments.pop('bucket')
-    model.BATCH_SIZE = arguments.pop('batch_size')
-    model.TRAIN_STEPS = (arguments.pop('train_examples') * 1000) / model.BATCH_SIZE
-    model.EVAL_STEPS = arguments.pop('eval_steps')
-    print("Will train for {} steps using batch_size={}".format(model.TRAIN_STEPS, model.BATCH_SIZE))
-    model.PATTERN = arguments.pop('pattern')
-    model.NEMBEDS = arguments.pop('nembeds')
-    model.NNSIZE = arguments.pop('nnsize')
-    print("Will use DNN size of {}".format(model.NNSIZE))
-    model.TROTTLE_SECS = arguments.pop('throttle_secs')
-    model.EVAL_DELAY_SECS = arguments.pop('eval_delay_secs')
-    model.VERBOSITY = arguments.pop('verbosity')
+def train_and_evaluate(args):
+    
+    tf.compat.v1.summary.FileWriterCache.clear()
+    
+    estimator, train_spec, eval_spec = model.my_estimator(args.output_dir, args.throttle_secs, args.nnsize, args.batch_size, args.train_steps, args.eval_steps, args.eval_delay_secs)
+    
+    tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-    # Run the training job
-    model.train_and_evaluate(output_dir)
+
+if __name__ == '__main__':
+    
+    args = parse_arguments()
+    tf.compat.v1.logging.set_verbosity(args.verbosity)
+    train_and_evaluate(args)
+
+    
+
+    
