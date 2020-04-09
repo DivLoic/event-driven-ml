@@ -34,7 +34,7 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
     exporter = tf.estimator.LatestExporter('exporter', serving_input_receiver_fn=util.serving_input_receiver_fn)
     
     eval_spec = tf.estimator.EvalSpec(
-        input_fn=util.read_dataset('eval', tf.estimator.ModeKeys.EVAL, 2**15),
+        input_fn=util.read_dataset('test', tf.estimator.ModeKeys.EVAL, 2**15),
         steps=eval_steps,
         start_delay_secs=eval_delay_secs,  # start evaluating after N seconds
         throttle_secs=throttle_secs,  # evaluate every N seconds
