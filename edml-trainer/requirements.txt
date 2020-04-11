@@ -4,3 +4,5 @@ scikit-learn
 scipy
 configparser
 tensorflow_io==0.12.0
+
+pytest==5.4.1
