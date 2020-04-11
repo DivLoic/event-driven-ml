@@ -74,7 +74,6 @@ train:
     - gcloud ai-platform jobs list
     - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
   dependencies:
-    - version
     - package
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
@@ -86,7 +85,7 @@ on-demand-train:
   stage: deploy-app/train
   only:
     variables:
-    - $TRAIN_VERSION
+      - $TRAIN_VERSION
   cache:
     <<: *gradle_cache
   script:
@@ -98,7 +97,6 @@ on-demand-train:
     - mkdir -p ${CI_PROJECT_DIR}/build/
     - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
   dependencies:
-    - version
     - package
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
@@ -131,5 +129,3 @@ deploy-app:
     - trunk
   script:
     - echo "I'm deploying now"
-  dependencies:
-    - version
