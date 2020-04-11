@@ -189,7 +189,7 @@ instance/
 docs/_build/
 
 # PyBuilder
-target/
+*target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -243,3 +243,4 @@ dmypy.json
 .libtensorflow/
 ext.*.tfvars
 *edml-cmd/*
+settings.xml
