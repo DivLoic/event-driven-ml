@@ -1,11 +1,9 @@
 image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
-  MAVEN_HOME: ${HOME}/.m2
+  MAVEN_HOME: /root/.m2
 
 before_script:
-  - echo $HOME
-  - echo $MAVEN_HOME
   - apt-get install -y gettext-base
   - mkdir -p ${MAVEN_HOME}
   - envsubst < settings.template.xml > ${MAVEN_HOME}/settings.xml
@@ -19,7 +17,7 @@ stages:
 cache: &maven_cache
   key: ${CI_PROJECT_NAME}
   paths:
-    - ${MAVEN_HOME}
+    - ${MAVEN_HOME}/*
   policy: pull-push
 
 .manual_submission: &manual_submission
