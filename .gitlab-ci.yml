@@ -25,26 +25,6 @@ cache: &maven_cache
     variables:
       - $TRAIN_VERSION
 
-#.prepare_build: &prepare_build
-#  before_script:
-#    - cat ./build/version.properties
-#    - export PROJECT_VERSION=$(cat ./build/version.properties | grep -i display | awk -F= '{print $2}')
-#    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
-
-#version:
-#  stage: version
-#  <<: *manual_submission
-#  cache:
-#    <<: *maven_cache
-#  script:
-#    - ./gradlew versionFile
-#    - cat ./build/version.properties
-#  artifacts:
-#    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-#    paths:
-#      - build/
-#    expire_in: 1 week
-
 test:
   stage: test
   <<: *manual_submission
@@ -62,7 +42,7 @@ package:
     - ./mvnw package jib:build -DskipTests -s ${MAVEN_HOME}/settings.xml
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
     - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
-    - gsutil cp ./edml-trainer/target/dist/python-build/edml_trainer*.whl gs://edml/pypi/edml-trainer/
+    - gsutil cp ./edml-trainer/target/dist/edml_trainer*.whl gs://edml/pypi/edml-trainer/
 
 train:
   stage: deploy-app/train
