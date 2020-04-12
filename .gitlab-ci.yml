@@ -1,8 +1,8 @@
 image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
-  XDG_CACHE_HOME: /root/.pip
-  MAVEN_REPO: /root/.m2
+  XDG_CACHE_HOME: out/.pip
+  MAVEN_REPO: out/.m2
   MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
   MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
 
@@ -33,9 +33,8 @@ test:
   stage: test
   <<: *manual_submission
   script:
-    - ls -al /root/.m2/repository/ && ls -al /root/.pip/pip
+    - ls -al out/.m2/repository/ && ls -al out/.pip/pip
     - ./mvnw test
-    - echo $(./maven-eval.sh \${edml.revision})
 
 package:
   stage: package
@@ -50,7 +49,7 @@ train:
   stage: deploy-app/train
   <<: *manual_submission
   before_script:
-    - export PROJECT_VERSION=$(./maven-eval.sh $${edml.revision})
+    - export PROJECT_VERSION=$(./maven-eval.sh \${edml.revision})
     - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
   script:
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
