@@ -1,13 +1,15 @@
 image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
-  MAVEN_HOME: /root/.m2
   XDG_CACHE_HOME: /root/.pip
+  MAVEN_REPO: /root/.m2
+  MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
+  MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
 
 before_script:
   - apt-get install -y gettext-base
-  - mkdir -p ${MAVEN_HOME}
-  - envsubst < settings.template.xml > ${MAVEN_HOME}/settings.xml
+  - mkdir -p ${MAVEN_REPO}
+  - envsubst < settings.template.xml > ${MAVEN_REPO}/settings.xml
 
 stages:
   - test
@@ -18,7 +20,7 @@ stages:
 cache:
   key: EDML_CACHING_KEY
   paths:
-    - ${MAVEN_HOME}/
+    - ${MAVEN_REPO}/
     - ${XDG_CACHE_HOME}/
   policy: pull-push
 
@@ -31,13 +33,15 @@ test:
   stage: test
   <<: *manual_submission
   script:
-    - ./mvnw test -s ${MAVEN_HOME}/settings.xml
+    - ls -al /root/.m2/repository/ && ls -al /root/.pip/pip
+    - ./mvnw test
+    - echo $(./maven-eval.sh \${edml.revision})
 
 package:
   stage: package
   <<: *manual_submission
   script:
-    - ./mvnw package jib:build -DskipTests -s ${MAVEN_HOME}/settings.xml
+    - ./mvnw package jib:build -DskipTests
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
     - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
     - gsutil cp ./edml-trainer/target/dist/edml_trainer*.whl gs://edml/pypi/edml-trainer/
