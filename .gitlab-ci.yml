@@ -1,13 +1,12 @@
-image: loicmdivad/edml-cicd-base:0.1.1
+image: loicmdivad/edml-cicd-base:0.1.1-SNAPSHOT
 
 variables:
-  XDG_CACHE_HOME: out/.pip
+  PIP_DOWNLOAD_CACHE: out/.pip
   MAVEN_REPO: out/.m2
   MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
   MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
 
 before_script:
-  - apt-get install -y gettext-base
   - mkdir -p ${MAVEN_REPO}
   - envsubst < settings.template.xml > ${MAVEN_REPO}/settings.xml
 
@@ -21,7 +20,7 @@ cache:
   key: EDML_CACHING_KEY
   paths:
     - ${MAVEN_REPO}/
-    - ${XDG_CACHE_HOME}/
+    - ${PIP_DOWNLOAD_CACHE}/
   policy: pull-push
 
 .manual_submission: &manual_submission
@@ -33,13 +32,13 @@ test:
   stage: test
   <<: *manual_submission
   script:
-    - ./mvnw test
+    - ./mvnw -B test
 
 package:
   stage: package
   <<: *manual_submission
   script:
-    - ./mvnw package jib:build -DskipTests
+    - ./mvnw -B package jib:build -DskipTests
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
     - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
     - gsutil cp ./edml-trainer/target/dist/edml_trainer*.whl gs://edml/pypi/edml-trainer/
@@ -57,7 +56,7 @@ train:
   stage: deploy-app/train
   <<: *manual_submission
   variables:
-    PROJECT_VERSION: './maven-eval.sh $${edml.revision}'
+    PROJECT_VERSION: 'maven-eval $${edml.revision}'
     PY_PROJECT_VERSION: 'echo $PROJECT_VERSION | tr "-" "_"'
   <<: *training
 
