@@ -33,7 +33,6 @@ test:
   stage: test
   <<: *manual_submission
   script:
-    - ls -al out/.m2/repository/ && ls -al out/.pip/pip
     - ./mvnw test
 
 package:
@@ -45,12 +44,7 @@ package:
     - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
     - gsutil cp ./edml-trainer/target/dist/edml_trainer*.whl gs://edml/pypi/edml-trainer/
 
-train:
-  stage: deploy-app/train
-  <<: *manual_submission
-  before_script:
-    - export PROJECT_VERSION=$(./maven-eval.sh \${edml.revision})
-    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
+.training: &training
   script:
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
     - mkdir ./out && cd ./out
@@ -59,26 +53,23 @@ train:
     - gcloud ai-platform jobs list
     - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
 
+train:
+  stage: deploy-app/train
+  <<: *manual_submission
+  variables:
+    PROJECT_VERSION: './maven-eval.sh $${edml.revision}'
+    PY_PROJECT_VERSION: 'echo $PROJECT_VERSION | tr "-" "_"'
+  <<: *training
+
 on-demand-train:
   stage: deploy-app/train
   only:
     variables:
       - $TRAIN_VERSION
-  script:
-    - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
-    - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
-    - mkdir out && gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer-${PY_TRAIN_VERSION}-py3-none-any.whl ./out
-    - cd ./out && unzip edml_trainer*
-    - gcloud ai-platform jobs list
-    - mkdir -p ${CI_PROJECT_DIR}/build/
-    - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
-  dependencies:
-    - package
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 3 week
+  variables:
+    PROJECT_VERSION: 'eval $TRAIN_VERSION'
+    PY_PROJECT_VERSION: 'echo $TRAIN_VERSION | tr "-" "_"'
+  <<: *training
 
 deploy-model:
   when: manual
