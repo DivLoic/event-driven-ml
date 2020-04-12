@@ -46,7 +46,7 @@ package:
 .training: &training
   script:
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
-    - mkdir ./out && cd ./out
+    - mkdir -p ./out && cd ./out
     - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
     - unzip edml_trainer*
     - gcloud ai-platform jobs list
@@ -56,7 +56,7 @@ train:
   stage: deploy-app/train
   <<: *manual_submission
   variables:
-    PROJECT_VERSION: 'maven-eval $${edml.revision}'
+    PROJECT_VERSION: 'maven-eval \${edml.revision}'
     PY_PROJECT_VERSION: 'echo $PROJECT_VERSION | tr "-" "_"'
   <<: *training
 
