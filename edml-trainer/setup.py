@@ -1,12 +1,9 @@
 import os
 from distutils.core import setup
-
 from setuptools import find_packages
-
 if __name__ == '__main__':
     with open('requirements.txt') as file:
         required = file.read().splitlines()
-
     setup(
         name="edml-trainer",
         version=os.getenv('version', 'SNAPSHOT'),
