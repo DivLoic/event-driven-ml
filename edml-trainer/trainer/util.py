@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow_io as tfio
+# import tensorflow_io as tfio
 from tensorflow_io.bigquery import BigQueryClient
 
 PROJECT_ID = "event-driven-ml"
@@ -91,7 +91,7 @@ def read_dataset(suffix, mode, batch_size):
             dataset_id=DATASET_ID,
             selected_fields=CSV_COLUMNS,
             output_types=[tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.float64, tf.int64],
-            requested_streams=10
+            requested_streams=0
         )
         
         def decode_row(records):
