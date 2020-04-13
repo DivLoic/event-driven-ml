@@ -1,5 +1,2 @@
-pandas
-sklearn
-scikit-learn
-scipy
-configparser
+tensorflow==1.15.2
+tensorflow-io==0.8.1
