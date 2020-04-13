@@ -1,7 +1,7 @@
 image: loicmdivad/edml-cicd-base:0.1.1-SNAPSHOT
 
 variables:
-  PIP_DOWNLOAD_CACHE: out/.pip
+  PIP_CACHE_DIR: out/.pip
   MAVEN_REPO: out/.m2
   MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
   MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
@@ -45,6 +45,8 @@ package:
 
 .training: &training
   script:
+    - export PROJECT_VERSION=$(PROJECT_VERSION_CMD)
+    - export PY_PROJECT_VERSION=$(PY_PROJECT_VERSION_CMD)
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
     - mkdir -p ./out && cd ./out
     - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
@@ -56,8 +58,8 @@ train:
   stage: deploy-app/train
   <<: *manual_submission
   variables:
-    PROJECT_VERSION: 'maven-eval \${edml.revision}'
-    PY_PROJECT_VERSION: 'echo $PROJECT_VERSION | tr "-" "_"'
+    PROJECT_VERSION_CMD: 'maven-eval "\${edml.revision}"'
+    PY_PROJECT_VERSION_CMD: 'tr "-" "_" <<(echo $PROJECT_VERSION)'
   <<: *training
 
 on-demand-train:
@@ -66,8 +68,8 @@ on-demand-train:
     variables:
       - $TRAIN_VERSION
   variables:
-    PROJECT_VERSION: 'eval $TRAIN_VERSION'
-    PY_PROJECT_VERSION: 'echo $TRAIN_VERSION | tr "-" "_"'
+    PROJECT_VERSION_CMD: 'eval $TRAIN_VERSION'
+    PY_PROJECT_VERSION_CMD: 'tr "-" "_" <<(echo $PROJECT_VERSION)'
   <<: *training
 
 deploy-model:
