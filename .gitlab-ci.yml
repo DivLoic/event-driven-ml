@@ -1,10 +1,9 @@
 image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
-  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle/
+  MAVEN_HOME: $CI_PROJECT_DIR/.m2/
 
 stages:
-  - version
   - test
   - package
   - deploy-app/train
@@ -13,9 +12,7 @@ stages:
 cache: &gradle_cache
   key: ${CI_PROJECT_NAME}
   paths:
-    - .gradle/
-    - edml-trainer/virtualenv/
-    - edml-trainer/build/libs/
+    - ${MAVEN_HOME}
   policy: pull-push
 
 .manual_submission: &manual_submission
@@ -23,63 +20,53 @@ cache: &gradle_cache
     variables:
       - $TRAIN_VERSION
 
-.prepare_build: &prepare_build
-  before_script:
-    - cat ./build/version.properties
-    - export PROJECT_VERSION=$(cat ./build/version.properties | grep -i display | awk -F= '{print $2}')
-    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
+#.prepare_build: &prepare_build
+#  before_script:
+#    - cat ./build/version.properties
+#    - export PROJECT_VERSION=$(cat ./build/version.properties | grep -i display | awk -F= '{print $2}')
+#    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
 
-version:
-  stage: version
-  <<: *manual_submission
-  cache:
-    <<: *gradle_cache
-  script:
-    - ./gradlew versionFile
-    - cat ./build/version.properties
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 1 week
+#version:
+#  stage: version
+#  <<: *manual_submission
+#  cache:
+#    <<: *gradle_cache
+#  script:
+#    - ./gradlew versionFile
+#    - cat ./build/version.properties
+#  artifacts:
+#    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+#    paths:
+#      - build/
+#    expire_in: 1 week
 
 test:
   stage: test
   <<: *manual_submission
   cache:
     <<: *gradle_cache
-  <<: *prepare_build
   script:
-    - ./gradlew test
-  dependencies:
-    - version
+    - ./mvnw test
 
 package:
   stage: package
   <<: *manual_submission
   cache:
     <<: *gradle_cache
-  <<: *prepare_build
   script:
-    - ./gradlew build jib -x test
-    - gsutil cp ./edml-schema/build/libs/edml-schema-${PROJECT_VERSION}.jar gs://edml/maven/edml-schema/
-    - gsutil cp ./edml-serving/build/libs/edml-serving-${PROJECT_VERSION}.jar gs://edml/maven/edml-serving/
-    - gsutil cp ./edml-scoring/build/libs/edml-scoring-${PROJECT_VERSION}.jar gs://edml/maven/edml-scoring/
-    - gsutil cp ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl gs://edml/pypi/edml-trainer/
-  dependencies:
-    - version
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - edml-trainer/build/python-build/
-    expire_in: 1 week
+    - ./mvnw package jib -DskipTests
+    - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
+    - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
+    - gsutil cp ./edml-trainer/target/dist/python-build/edml_trainer*.whl gs://edml/pypi/edml-trainer/
 
 train:
   stage: deploy-app/train
   <<: *manual_submission
   cache:
     <<: *gradle_cache
-  <<: *prepare_build
+  before_script:
+    - export PROJECT_VERSION=$(./maven-eval.sh $${edml.revision})
+    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
   script:
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
     - mkdir ./out && mv ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl ./out
@@ -87,7 +74,6 @@ train:
     - gcloud ai-platform jobs list
     - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
   dependencies:
-    - version
     - package
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
@@ -99,7 +85,7 @@ on-demand-train:
   stage: deploy-app/train
   only:
     variables:
-    - $TRAIN_VERSION
+      - $TRAIN_VERSION
   cache:
     <<: *gradle_cache
   script:
@@ -111,7 +97,6 @@ on-demand-train:
     - mkdir -p ${CI_PROJECT_DIR}/build/
     - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
   dependencies:
-    - version
     - package
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
@@ -124,7 +109,6 @@ deploy-model:
   only:
     - trunk
   stage: deploy-model
-  <<: *prepare_build
   script:
     - export BUCKET=$(cat ./build/version.properties | grep -i model_path | awk -F= '{print $2}')
     - export VERSION=$(cat ./build/version.properties | grep -i model_version | awk -F= '{print $2}')
@@ -143,8 +127,5 @@ deploy-app:
   when: manual
   only:
     - trunk
-  <<: *prepare_build
   script:
     - echo "I'm deploying now"
-  dependencies:
-    - version
