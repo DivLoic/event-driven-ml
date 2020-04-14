@@ -1,7 +1,12 @@
 image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
-  MAVEN_HOME: $CI_PROJECT_DIR/.m2/
+  MAVEN_HOME: ${HOME}/.m2
+
+before_script:
+  - apt-get install -y gettext-base
+  - mkdir -p ${MAVEN_HOME}
+  - envsubst < settings.template.xml > ${MAVEN_HOME}/settings.xml
 
 stages:
   - test
@@ -46,7 +51,7 @@ test:
   cache:
     <<: *gradle_cache
   script:
-    - ./mvnw test
+    - ./mvnw test -s ${MAVEN_HOME}/settings.xml
 
 package:
   stage: package
