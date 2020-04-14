@@ -4,6 +4,8 @@ variables:
   MAVEN_HOME: ${HOME}/.m2
 
 before_script:
+  - echo $HOME
+  - echo $MAVEN_HOME
   - apt-get install -y gettext-base
   - mkdir -p ${MAVEN_HOME}
   - envsubst < settings.template.xml > ${MAVEN_HOME}/settings.xml
@@ -14,7 +16,7 @@ stages:
   - deploy-app/train
   - deploy-model
 
-cache: &gradle_cache
+cache: &maven_cache
   key: ${CI_PROJECT_NAME}
   paths:
     - ${MAVEN_HOME}
@@ -35,7 +37,7 @@ cache: &gradle_cache
 #  stage: version
 #  <<: *manual_submission
 #  cache:
-#    <<: *gradle_cache
+#    <<: *maven_cache
 #  script:
 #    - ./gradlew versionFile
 #    - cat ./build/version.properties
@@ -49,7 +51,7 @@ test:
   stage: test
   <<: *manual_submission
   cache:
-    <<: *gradle_cache
+    <<: *maven_cache
   script:
     - ./mvnw test -s ${MAVEN_HOME}/settings.xml
 
@@ -57,9 +59,9 @@ package:
   stage: package
   <<: *manual_submission
   cache:
-    <<: *gradle_cache
+    <<: *maven_cache
   script:
-    - ./mvnw package jib -DskipTests
+    - ./mvnw package jib:build -DskipTests -s ${MAVEN_HOME}/settings.xml
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
     - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
     - gsutil cp ./edml-trainer/target/dist/python-build/edml_trainer*.whl gs://edml/pypi/edml-trainer/
@@ -68,7 +70,7 @@ train:
   stage: deploy-app/train
   <<: *manual_submission
   cache:
-    <<: *gradle_cache
+    <<: *maven_cache
   before_script:
     - export PROJECT_VERSION=$(./maven-eval.sh $${edml.revision})
     - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
@@ -92,7 +94,7 @@ on-demand-train:
     variables:
       - $TRAIN_VERSION
   cache:
-    <<: *gradle_cache
+    <<: *maven_cache
   script:
     - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
     - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
@@ -128,7 +130,7 @@ deploy-app:
   stage: deploy-app/train
   <<: *manual_submission
   cache:
-    <<: *gradle_cache
+    <<: *maven_cache
   when: manual
   only:
     - trunk
