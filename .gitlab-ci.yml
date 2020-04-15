@@ -2,6 +2,7 @@ image: loicmdivad/edml-cicd-base:0.1.1
 
 variables:
   MAVEN_HOME: /root/.m2
+  XDG_CACHE_HOME: /root/.pip
 
 before_script:
   - apt-get install -y gettext-base
@@ -14,10 +15,11 @@ stages:
   - deploy-app/train
   - deploy-model
 
-cache: &maven_cache
-  key: ${CI_PROJECT_NAME}
+cache:
+  key: EDML_CACHING_KEY
   paths:
-    - ${MAVEN_HOME}/*
+    - ${MAVEN_HOME}/
+    - ${XDG_CACHE_HOME}/
   policy: pull-push
 
 .manual_submission: &manual_submission
@@ -28,16 +30,12 @@ cache: &maven_cache
 test:
   stage: test
   <<: *manual_submission
-  cache:
-    <<: *maven_cache
   script:
     - ./mvnw test -s ${MAVEN_HOME}/settings.xml
 
 package:
   stage: package
   <<: *manual_submission
-  cache:
-    <<: *maven_cache
   script:
     - ./mvnw package jib:build -DskipTests -s ${MAVEN_HOME}/settings.xml
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
@@ -47,32 +45,22 @@ package:
 train:
   stage: deploy-app/train
   <<: *manual_submission
-  cache:
-    <<: *maven_cache
   before_script:
     - export PROJECT_VERSION=$(./maven-eval.sh $${edml.revision})
     - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
   script:
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
-    - mkdir ./out && mv ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl ./out
-    - cd ./out && unzip edml_trainer*
+    - mkdir ./out && cd ./out
+    - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
+    - unzip edml_trainer*
     - gcloud ai-platform jobs list
     - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
-  dependencies:
-    - package
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 3 week
 
 on-demand-train:
   stage: deploy-app/train
   only:
     variables:
       - $TRAIN_VERSION
-  cache:
-    <<: *maven_cache
   script:
     - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
     - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
@@ -107,8 +95,6 @@ deploy-model:
 deploy-app:
   stage: deploy-app/train
   <<: *manual_submission
-  cache:
-    <<: *maven_cache
   when: manual
   only:
     - trunk
