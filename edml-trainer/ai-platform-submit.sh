@@ -18,7 +18,7 @@ JOB_ID=${JOB_NAME}_${JOB_NUM}
 JOB_DIR=gs://${BUCKET}/models/${APP}/${VERSION}-${JOB_NUM}
 
 PYTHON_VERSION="${PYTHON_VERSION:-3.5}"
-RUNTIME_VERSION="${RUNTIME_VERSION:-1.14}"
+RUNTIME_VERSION="${RUNTIME_VERSION:-1.15}"
 
 OUTDIR=${JOB_DIR}/model
 
@@ -74,10 +74,3 @@ gcloud ai-platform jobs submit training ${JOB_ID} \
 gcloud ai-platform jobs describe ${JOB_ID}
 
 gcloud ai-platform jobs stream-logs ${JOB_ID}
-
-echo "Saving model properties in directory ${CI_PROJECT_DIR}/build"
-mkdir -p ${CI_PROJECT_DIR}/build
-
-echo "VERSION_MODEL_ID=${JOB_ID}" >> ${CI_PROJECT_DIR}/build/version.properties
-echo "VERSION_MODEL_PATH=${JOB_DIR}" >> ${CI_PROJECT_DIR}/build/version.properties
-echo "VERSION_MODEL_VERSION=${VERSION}-${JOB_NUM}" >> ${CI_PROJECT_DIR}/build/version.properties
