@@ -75,9 +75,6 @@ gcloud ai-platform jobs describe ${JOB_ID}
 
 gcloud ai-platform jobs stream-logs ${JOB_ID}
 
-export MODEL_ID=${JOB_ID}
-export MODEL_PATH=${JOB_DIR}
-
 STATUS=$(gcloud ai-platform jobs describe ${JOB_ID} --format="value(state)")
 
-[[ "$STATUS" -ne "SUCCEEDED" ]] && exit 1 || echo "The training job sucessfully completed!"
+[[ "$STATUS" -ne "SUCCEEDED" ]] && exit 1 || echo "The training job successfully completed!"

@@ -60,6 +60,13 @@ package:
     - unzip edml_trainer*
     - gcloud ai-platform jobs list
     - ./ai-platform-submit.sh ${PROJECT_VERSION}
+    - ../export-model-version.sh edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
+    - ../export-model-path.sh edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
+  artifacts:
+    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
+    paths:
+      - .training-output.sh
+    expire_in: 10 week
 
 train:
   stage: deploy-app/train
@@ -88,7 +95,11 @@ deploy-model:
   only:
     - trunk
   script:
-    - MODEL_VERSION=${MODEL_ID} MODEL_PATH=${MODEL_PATH}/ /app/bin/edml-cicd-base
+    - cat .training-output.sh
+    - source .training-output.sh
+    - echo $MODEL_ID
+    - echo $MODEL_PATH
+    - edml
   dependencies:
     - train
     - on-demand-model-training
@@ -98,9 +109,11 @@ on-demand-model-deployement:
   stage: deploy-model
   when: manual
   only:
-    - trunk
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
   script:
-    - MODEL_VERSION=${DEPLOY_VERSION} MODEL_PATH=${DEPLOY_PATH}/ /app/bin/edml-cicd-base
+    - MODEL_VERSION=${DEPLOY_VERSION} MODEL_PATH=${DEPLOY_PATH}/ edml
   allow_failure: false
 
 deploy-app:
