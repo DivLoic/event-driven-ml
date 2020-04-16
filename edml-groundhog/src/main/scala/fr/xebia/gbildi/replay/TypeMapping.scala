@@ -23,6 +23,9 @@ trait TypeMapping {
       val datetime = row.get("pickup_datetime").getStringValue
       TaxiTripPickup(
         uuid = row.get("uuid").getStringValue,
+        year = row.get("year").getLongValue.intValue(),
+        weekofyear = row.get("weekofyear").getLongValue.intValue(),
+        distance = row.get("distance").getDoubleValue.floatValue(),
         pickup_datetime = ZonedDateTime.parse(datetime, formatter.withZone(zoneId)).toInstant,
         dayofweek = row.get("dayofweek").getLongValue.intValue(),
         hourofday = row.get("hourofday").getLongValue.intValue(),
@@ -36,9 +39,7 @@ trait TypeMapping {
       val dateTime = row.get("dropoff_datetime").getStringValue
       TaxiTripDropoff(
         dropoff_datetime = ZonedDateTime.parse(dateTime, formatter.withZone(zoneId)).toInstant,
-        trip_distance = row.get("trip_distance").getNumericValue.floatValue(),
-        trip_duration = row.get("trip_duration").getLongValue.intValue(),
-        total_amount = row.get("total_amount").getNumericValue.floatValue()
+        trip_duration = row.get("trip_duration").getLongValue.intValue()
       )
     }
   }

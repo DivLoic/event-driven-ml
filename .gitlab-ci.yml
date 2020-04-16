@@ -1,21 +1,26 @@
-image: gcr.io/event-driven-ml/edml-cicd-base:0.1.1
+image: loicmdivad/edml-cicd-base:0.1.1-SNAPSHOT
 
 variables:
-  GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle/
+  PIP_CACHE_DIR: out/.pip
+  MAVEN_REPO: out/.m2
+  MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
+  MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
+
+before_script:
+  - mkdir -p ${MAVEN_REPO}
+  - envsubst < settings.template.xml > ${MAVEN_REPO}/settings.xml
 
 stages:
-  - version
   - test
   - package
   - deploy-app/train
   - deploy-model
 
-cache: &gradle_cache
-  key: ${CI_PROJECT_NAME}
+cache:
+  key: EDML_CACHING_KEY
   paths:
-    - .gradle/
-    - edml-trainer/virtualenv/
-    - edml-trainer/build/libs/
+    - ${MAVEN_REPO}/
+    - ${PIP_CACHE_DIR}/
   policy: pull-push
 
 .manual_submission: &manual_submission
@@ -23,131 +28,97 @@ cache: &gradle_cache
     variables:
       - $TRAIN_VERSION
 
-.prepare_build: &prepare_build
-  before_script:
-    - cat ./build/version.properties
-    - export PROJECT_VERSION=$(cat ./build/version.properties | grep -i display | awk -F= '{print $2}')
-    - export PY_PROJECT_VERSION=$(echo $PROJECT_VERSION | tr "-" "_")
-
-version:
-  stage: version
-  <<: *manual_submission
-  cache:
-    <<: *gradle_cache
-  script:
-    - ./gradlew versionFile
-    - cat ./build/version.properties
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 1 week
-
+.manual_publication: &manual_publication
+  except:
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
 test:
   stage: test
   <<: *manual_submission
-  cache:
-    <<: *gradle_cache
-  <<: *prepare_build
+  <<: *manual_publication
   script:
-    - ./gradlew test
-  dependencies:
-    - version
+    - ./mvnw -B test
 
 package:
   stage: package
   <<: *manual_submission
-  cache:
-    <<: *gradle_cache
-  <<: *prepare_build
+  <<: *manual_publication
   script:
-    - ./gradlew build jib -x test
-    - gsutil cp ./edml-schema/build/libs/edml-schema-${PROJECT_VERSION}.jar gs://edml/maven/edml-schema/
-    - gsutil cp ./edml-serving/build/libs/edml-serving-${PROJECT_VERSION}.jar gs://edml/maven/edml-serving/
-    - gsutil cp ./edml-scoring/build/libs/edml-scoring-${PROJECT_VERSION}.jar gs://edml/maven/edml-scoring/
-    - gsutil cp ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl gs://edml/pypi/edml-trainer/
-  dependencies:
-    - version
+    - ./mvnw -B package jib:build -DskipTests
+    - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
+    - gsutil cp ./edml-scoring/target/edml-scoring*.jar gs://edml/maven/edml-scoring/
+    - gsutil cp ./edml-trainer/target/dist/edml_trainer*.whl gs://edml/pypi/edml-trainer/
+
+.training: &training
+  script:
+    - export PROJECT_VERSION=$(eval $PROJECT_VERSION_CMD)
+    - export PY_PROJECT_VERSION=$(eval $PY_PROJECT_VERSION_CMD)
+    - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
+    - mkdir -p ./out && cd ./out
+    - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
+    - unzip edml_trainer*
+    - gcloud ai-platform jobs list --sort-by=created --limit=10
+    - ./ai-platform-submit.sh ${PROJECT_VERSION}
+    - export-model-version edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
+    - export-model-path edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
     paths:
-      - edml-trainer/build/python-build/
-    expire_in: 1 week
+      - .training-output.sh
+    expire_in: 10 week
 
 train:
   stage: deploy-app/train
   <<: *manual_submission
-  cache:
-    <<: *gradle_cache
-  <<: *prepare_build
-  script:
-    - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
-    - mkdir ./out && mv ./edml-trainer/build/python-build/edml_trainer*${PY_PROJECT_VERSION}*.whl ./out
-    - cd ./out && unzip edml_trainer*
-    - gcloud ai-platform jobs list
-    - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
-  dependencies:
-    - version
-    - package
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 3 week
+  <<: *manual_publication
+  variables:
+    PROJECT_VERSION_CMD: 'maven-eval \$${edml.revision}'
+    PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
+  <<: *training
 
-on-demand-train:
+on-demand-model-training:
   stage: deploy-app/train
+  <<: *manual_publication
   only:
     variables:
-    - $TRAIN_VERSION
-  cache:
-    <<: *gradle_cache
-  script:
-    - echo "Prepare Job submition with artifact ${TRAIN_VERSION}"
-    - export PY_TRAIN_VERSION=$(echo $TRAIN_VERSION | tr "-" "_")
-    - mkdir out && gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer-${PY_TRAIN_VERSION}-py3-none-any.whl ./out
-    - cd ./out && unzip edml_trainer*
-    - gcloud ai-platform jobs list
-    - mkdir -p ${CI_PROJECT_DIR}/build/
-    - scripts/ai-platform-submit.sh ${TRAIN_VERSION}
-  dependencies:
-    - version
-    - package
-  artifacts:
-    name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
-    paths:
-      - build/
-    expire_in: 3 week
+      - $TRAIN_VERSION
+  variables:
+    PROJECT_VERSION_CMD: 'echo $$TRAIN_VERSION'
+    PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
+  <<: *training
 
 deploy-model:
+  stage: deploy-model
+  <<: *manual_publication
   when: manual
   only:
     - trunk
-  stage: deploy-model
-  <<: *prepare_build
   script:
-    - export TMP_DIR="${TMP_MODEL_DIR:-/tmp/tensorflow-streams/}"
-    - export BUCKET=$(cat ./build/version.properties | grep -i model_path | awk -F= '{print $2}')
-    - export VERSION=$(cat ./build/version.properties | grep -i model_version | awk -F= '{print $2}')
-    - mkdir -p ${TMP_DIR}/${VERSION} && mkdir out && cd out
-    - gsutil -m cp -R "${BUCKET}/model/export/*/" .
-    - mv exporter/$(ls exporter | sort -nr | head -1)/* ${TMP_DIR}/${VERSION}/
-    - MODEL_VERSION=${VERSION} TF_MODEL_TMP_DIR=${TMP_DIR}/${VERSION}/ /app/bin/edml-cicd-base
+    - source .training-output.sh
+    - edml
   dependencies:
     - train
-    - on-demand-train
+    - on-demand-model-training
+  allow_failure: false
+
+on-demand-model-deployement:
+  stage: deploy-model
+  when: manual
+  only:
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
+  script:
+    - MODEL_VERSION=${DEPLOY_VERSION} MODEL_PATH=${DEPLOY_PATH}/ edml
   allow_failure: false
 
 deploy-app:
   stage: deploy-app/train
   <<: *manual_submission
-  cache:
-    <<: *gradle_cache
+  <<: *manual_publication
   when: manual
   only:
     - trunk
-  <<: *prepare_build
   script:
     - echo "I'm deploying now"
-  dependencies:
-    - version

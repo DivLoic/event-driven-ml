@@ -7,7 +7,7 @@ import cats.implicits._
 import fr.xebia.gbildi.config.{Configs, ScoringConfig}
 import fr.xebia.gbildi.joiner.PredictionJoiner
 import fr.xebia.gbildi.processor.CostMetricProcessor
-import fr.xebia.gbildi.schema.{EmptyScore, _}
+import fr.xebia.gbildi.schema._
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.kstream.{JoinWindows, Printed, TimeWindows, Windowed}

@@ -1,26 +1,30 @@
+import os
 from distutils.core import setup
-from setuptools import find_packages
-import configparser
 
+from setuptools import find_packages
 
 if __name__ == '__main__':
-
-    with open('../build/version.properties', 'r', encoding="utf-8") as f:
-        config_string = '[root]\n' + f.read()
-
-    config = configparser.ConfigParser()
-    config.read_string(config_string, 'utf-8')
+    with open('requirements.txt') as file:
+        required = file.read().splitlines()
 
     setup(
         name="edml-trainer",
-        version=config['root']['VERSION_DISPLAY'],
+        version=os.getenv('version', 'SNAPSHOT'),
         description='Predict trip duration - NYC taxi public dataset',
         author='gbianchi',
         author_email='gbianchi@xebia.fr',
         packages=find_packages(),
         py_modules=['__init__'],
+        install_requires=required,
         zip_safe=True,
-        data_files=[('/scripts', ['ai-platform-submit.sh'])],
+        data_files=[(
+            '/',
+            [
+                'setup.py',
+                'requirements.txt',
+                'ai-platform-submit.sh'
+            ]
+        )],
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
