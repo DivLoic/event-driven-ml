@@ -28,15 +28,22 @@ cache:
     variables:
       - $TRAIN_VERSION
 
+.manual_publication: &manual_publication
+  except:
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
 test:
   stage: test
   <<: *manual_submission
+  <<: *manual_publication
   script:
     - ./mvnw -B test
 
 package:
   stage: package
   <<: *manual_submission
+  <<: *manual_publication
   script:
     - ./mvnw -B package jib:build -DskipTests
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
@@ -47,25 +54,25 @@ package:
   script:
     - export PROJECT_VERSION=$(eval $PROJECT_VERSION_CMD)
     - export PY_PROJECT_VERSION=$(eval $PY_PROJECT_VERSION_CMD)
-    - echo $PROJECT_VERSION
-    - echo $PY_PROJECT_VERSION
     - echo "Prepare Job submition with artifact ${PY_PROJECT_VERSION}"
     - mkdir -p ./out && cd ./out
     - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
     - unzip edml_trainer*
     - gcloud ai-platform jobs list
-    - scripts/ai-platform-submit.sh ${PROJECT_VERSION}
+    - ./ai-platform-submit.sh ${PROJECT_VERSION}
 
 train:
   stage: deploy-app/train
   <<: *manual_submission
+  <<: *manual_publication
   variables:
     PROJECT_VERSION_CMD: 'maven-eval \$${edml.revision}'
     PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
   <<: *training
 
-on-demand-train:
+on-demand-model-training:
   stage: deploy-app/train
+  <<: *manual_publication
   only:
     variables:
       - $TRAIN_VERSION
@@ -75,23 +82,31 @@ on-demand-train:
   <<: *training
 
 deploy-model:
+  stage: deploy-model
+  <<: *manual_publication
   when: manual
   only:
     - trunk
-  stage: deploy-model
   script:
-    - export BUCKET=$(cat ./build/version.properties | grep -i model_path | awk -F= '{print $2}')
-    - export VERSION=$(cat ./build/version.properties | grep -i model_version | awk -F= '{print $2}')
-    - export EXPORT=$(gsutil ls ${BUCKET}/model/export/exporter/ | sort | tail -1)
-    - MODEL_VERSION=${VERSION} MODEL_PATH=${EXPORT}/ /app/bin/edml-cicd-base
+    - MODEL_VERSION=${MODEL_ID} MODEL_PATH=${MODEL_PATH}/ /app/bin/edml-cicd-base
   dependencies:
     - train
-    - on-demand-train
+    - on-demand-model-training
+  allow_failure: false
+
+on-demand-model-deployement:
+  stage: deploy-model
+  when: manual
+  only:
+    - trunk
+  script:
+    - MODEL_VERSION=${DEPLOY_VERSION} MODEL_PATH=${DEPLOY_PATH}/ /app/bin/edml-cicd-base
   allow_failure: false
 
 deploy-app:
   stage: deploy-app/train
   <<: *manual_submission
+  <<: *manual_publication
   when: manual
   only:
     - trunk

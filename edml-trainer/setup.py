@@ -17,10 +17,14 @@ if __name__ == '__main__':
         py_modules=['__init__'],
         install_requires=required,
         zip_safe=True,
-        data_files=[
-            ('/', ['setup.py', 'requirements.txt']),
-            ('/scripts', ['ai-platform-submit.sh'])
-        ],
+        data_files=[(
+            '/',
+            [
+                'setup.py',
+                'requirements.txt',
+                'ai-platform-submit.sh'
+            ]
+        )],
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
