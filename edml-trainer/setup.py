@@ -18,7 +18,7 @@ if __name__ == '__main__':
         install_requires=required,
         zip_safe=True,
         data_files=[
-            ('/', ['requirements.txt']),
+            ('/', ['setup.py', 'requirements.txt']),
             ('/scripts', ['ai-platform-submit.sh'])
         ],
         classifiers=[
