@@ -58,10 +58,10 @@ package:
     - mkdir -p ./out && cd ./out
     - gsutil -m cp gs://edml/pypi/edml-trainer/edml_trainer*${PY_PROJECT_VERSION}*.whl .
     - unzip edml_trainer*
-    - gcloud ai-platform jobs list
+    - gcloud ai-platform jobs list --sort-by=created --limit=10
     - ./ai-platform-submit.sh ${PROJECT_VERSION}
-    - ../export-model-version.sh edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
-    - ../export-model-path.sh edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
+    - export-model-version edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
+    - export-model-path edml-trainer ${PROJECT_VERSION} >> ../.training-output.sh
   artifacts:
     name: "$CI_BUILD_NAME-artifacts-$CI_JOB_ID"
     paths:
@@ -95,10 +95,7 @@ deploy-model:
   only:
     - trunk
   script:
-    - cat .training-output.sh
     - source .training-output.sh
-    - echo $MODEL_ID
-    - echo $MODEL_PATH
     - edml
   dependencies:
     - train
