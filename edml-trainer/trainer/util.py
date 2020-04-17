@@ -7,7 +7,7 @@ DATASET_GCP_PROJECT_ID = "event-driven-ml"
 DATASET_ID = "edml_nyc_yellow_taxi_us"
 TABLE_ID = "gis_feat_eng"
 
-CSV_COLUMNS = ["uuid", "dayofweek", "hourofday", "weekofyear", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "distance", "trip_duration"]
+INPUT_COLUMNS = ["uuid", "dayofweek", "hourofday", "weekofyear", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "distance", "trip_duration"]
 LABEL_COLUMN = "trip_duration"
 KEY_COLUMN = "uuid"
 
@@ -89,7 +89,7 @@ def read_dataset(suffix, mode, batch_size):
             project_id=DATASET_GCP_PROJECT_ID,
             table_id="{}_{}".format(TABLE_ID, suffix), 
             dataset_id=DATASET_ID,
-            selected_fields=CSV_COLUMNS,
+            selected_fields=INPUT_COLUMNS,
             output_types=[tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.float64, tf.int64],
             requested_streams=0
         )
@@ -147,7 +147,6 @@ def get_wide_deep():
     fc_embed_weekofyear = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_weekofyear, dimension=NEMBEDS)
     fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=NEMBEDS)
     fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=NEMBEDS)
-    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=NEMBEDS)
     
     deep = [
         fn_passenger_count,
@@ -160,6 +159,7 @@ def get_wide_deep():
     ]
     
     return wide, deep
+
 
 # Serving input receiver function
 def serving_input_receiver_fn():
