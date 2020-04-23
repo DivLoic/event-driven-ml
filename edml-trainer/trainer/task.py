@@ -143,7 +143,7 @@ def train_and_evaluate(args):
     
     tf.compat.v1.summary.FileWriterCache.clear()
     
-    estimator, train_spec, eval_spec = model.my_estimator(args.output_dir, args.throttle_secs, args.nnsize, args.batch_size, args.train_steps, args.eval_steps, args.eval_delay_secs)
+    estimator, train_spec, eval_spec = model.my_estimator(args.output_dir, args.throttle_secs, args.nnsize, args.batch_size, args.train_steps, args.eval_steps, args.eval_delay_secs, args.nembeds)
     
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 

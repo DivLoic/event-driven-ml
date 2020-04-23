@@ -14,8 +14,6 @@ KEY_COLUMN = "uuid"
 # Set default values for each CSV column
 DEFAULTS = [['no_key'], [1], [0], [54], [""], [""], [1], [0], []]
 
-NEMBEDS = 3
-
 VOCABULARY = [
     'Allerton/Pelham Gardens', 'Alphabet City', 'Arden Heights', 'Arrochar/Fort Wadsworth', 
     'Astoria', 'Astoria Park', 'Auburndale', 'Baisley Park', 'Bath Beach', 'Battery Park',
@@ -91,7 +89,7 @@ def read_dataset(suffix, mode, batch_size):
             dataset_id=DATASET_ID,
             selected_fields=INPUT_COLUMNS,
             output_types=[tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.float64, tf.int64],
-            requested_streams=0
+            requested_streams=10
         )
         
         def decode_row(records):
@@ -99,7 +97,7 @@ def read_dataset(suffix, mode, batch_size):
             label = tf.cast(features.pop(LABEL_COLUMN), tf.float32)
             return features, label
         
-        dataset = read_session.parallel_read_rows(sloppy=True).map(decode_row)
+        dataset = read_session.parallel_read_rows().map(decode_row)
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             num_epochs = None  # indefinitely
@@ -113,7 +111,7 @@ def read_dataset(suffix, mode, batch_size):
 
 
 
-def get_wide_deep():
+def get_wide_deep(nembeds):
     
     # One hot encode categorical features
     fc_dayofweek = tf.compat.v1.feature_column.categorical_column_with_identity(key="dayofweek",
@@ -142,11 +140,11 @@ def get_wide_deep():
     fn_distance = tf.compat.v1.feature_column.numeric_column(key="distance")
     
     # Embedding_column to "group" together ...
-    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=NEMBEDS)
-    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=NEMBEDS)
-    fc_embed_weekofyear = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_weekofyear, dimension=NEMBEDS)
-    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=NEMBEDS)
-    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=NEMBEDS)
+    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=nembeds)
+    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=nembeds)
+    fc_embed_weekofyear = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_weekofyear, dimension=nembeds)
+    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=nembeds)
+    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=nembeds)
     
     deep = [
         fn_passenger_count,
