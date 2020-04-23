@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from . import util
 
-def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eval_steps, eval_delay_secs):
+def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eval_steps, eval_delay_secs, nembeds):
     
     run_config = tf.estimator.RunConfig(save_checkpoints_secs=throttle_secs,
                                         tf_random_seed=2810,
@@ -14,7 +14,7 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
         return {"rmse": tf.compat.v1.metrics.root_mean_squared_error(labels=labels, predictions=pred_values)}
     
     # Feature engineering
-    wide, deep = util.get_wide_deep()
+    wide, deep = util.get_wide_deep(nembeds)
     
     estimator = tf.estimator.DNNLinearCombinedRegressor(
         model_dir=output_dir,
