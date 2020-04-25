@@ -11,7 +11,7 @@
     <version>0.1.1</version>
 
     <modules>
-        <module>edml-groundhog</module>
+        <module>edml-replay</module>
         <module>edml-scoring</module>
         <module>edml-serving</module>
         <module>edml-trainer</module>

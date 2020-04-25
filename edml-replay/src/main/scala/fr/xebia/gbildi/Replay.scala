@@ -8,7 +8,7 @@ import akka.kafka.ProducerMessage.{Message, Result}
 import akka.kafka.scaladsl.{Consumer, Producer}
 import akka.kafka.{ConsumerSettings, ProducerMessage, ProducerSettings, Subscriptions}
 import akka.stream.scaladsl.Sink
-import akka.stream.{ActorAttributes, ActorMaterializer, ThrottleMode}
+import akka.stream.{ActorAttributes, ActorMaterializer, Supervision, ThrottleMode}
 import cats.syntax.either._
 import fr.xebia.gbildi.conf.ReplayConfig
 import fr.xebia.gbildi.gcp.ConfluentCloudProvider
@@ -85,6 +85,8 @@ object Replay extends App with ConfluentCloudProvider with TimeTravel with conf.
       }
 
       .via(Producer.flexiFlow(producerSettings))
+
+      .withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Stop))
 
       .withAttributes(
         ActorAttributes

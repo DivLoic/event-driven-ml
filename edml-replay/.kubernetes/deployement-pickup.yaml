@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: replay-pickup
-          image: gcr.io/event-driven-ml/edml-groundhog:latest
+          image: gcr.io/event-driven-ml/edml-replay:latest
           env:
             - name: SOURCE_TOPIC
               value: TAXI-TRIP-PICKUP-2018-11-28

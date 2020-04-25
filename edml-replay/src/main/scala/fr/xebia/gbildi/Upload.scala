@@ -16,8 +16,8 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
 import pureconfig.ConfigSource
-import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderFailures
+import pureconfig.generic.auto._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContextExecutor
@@ -66,7 +66,9 @@ object Upload extends App with TypeMapping with GoogleCloudProvider with Conflue
           val value = row.asTaxiTripPickup
           new ProducerRecord(topic, key, value)
         }
+
         .withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
+
         .withAttributes(ActorAttributes.logLevels(onFailure = Logging.WarningLevel))
 
       val dropOffFlow = Source
@@ -77,7 +79,9 @@ object Upload extends App with TypeMapping with GoogleCloudProvider with Conflue
           val value = row.asTaxiTripDropOff
           new ProducerRecord(topic, key, value)
         }
+
         .withAttributes(ActorAttributes.supervisionStrategy(_ => Supervision.Resume))
+
         .withAttributes(ActorAttributes.logLevels(onFailure = Logging.WarningLevel))
 
       pickupFlow.runWith(Producer.plainSink(pickupProducer))

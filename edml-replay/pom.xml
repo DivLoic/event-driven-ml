@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>edml-groundhog</artifactId>
+    <artifactId>edml-replay</artifactId>
 
     <dependencies>
         <dependency>
@@ -91,7 +91,7 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <configuration>
                     <to>
-                        <image>gcr.io/event-driven-ml/edml-groundhog</image>
+                        <image>gcr.io/event-driven-ml/edml-replay</image>
                     </to>
                     <container>
                         <mainClass>fr.xebia.gbildi.Replay</mainClass>
