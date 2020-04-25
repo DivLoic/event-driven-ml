@@ -9,7 +9,7 @@ datasources:
     type: prometheus
     access: direct
     orgId: 1
-    url: http://prometheus.xebilolo.com
+    url: https://www.f7f72e0.xebilolo.com
     isDefault: true
 
     version: 1
