@@ -51,6 +51,8 @@
         <edml.revision>${project.version}-${git.commit.time}-${git.commit.id.abbrev}</edml.revision>
         <open-jdk8-digest>3df52c4d414526f57880a50174ec2a4cf57fcbffeda607f0e9c545be2a5478fe</open-jdk8-digest>
 
+        <python.venv.dir>${user.home}/.venv/edml</python.venv.dir>
+
     </properties>
 
     <repositories>

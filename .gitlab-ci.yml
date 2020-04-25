@@ -2,12 +2,13 @@ image: loicmdivad/edml-cicd-base:0.1.1-SNAPSHOT
 
 variables:
   PIP_CACHE_DIR: out/.pip
+  VENV_HOME: out/.venv
   MAVEN_REPO: out/.m2
   MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
   MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
 
 before_script:
-  - mkdir -p ${MAVEN_REPO}
+  - mkdir -p ${MAVEN_REPO} ${VENV_HOME} ${PIP_CACHE_DIR}
   - envsubst < settings.template.xml > ${MAVEN_REPO}/settings.xml
 
 stages:
@@ -19,6 +20,7 @@ stages:
 cache:
   key: EDML_CACHING_KEY
   paths:
+    - ${VENV_HOME}/
     - ${MAVEN_REPO}/
     - ${PIP_CACHE_DIR}/
   policy: pull-push

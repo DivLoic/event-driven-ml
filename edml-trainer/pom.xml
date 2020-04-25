@@ -46,17 +46,35 @@
                 <version>1.6.0</version>
                 <executions>
                     <execution>
+                        <id>python-env</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <executable>virtualenv</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <environmentVariables>
+                                <version>${edml.revision}</version>
+                            </environmentVariables>
+                            <arguments>
+                                <argument>${python.venv.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>python-install</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <executable>python</executable>
+                            <executable>${python.venv.dir}/bin/python</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <version>${edml.revision}</version>
                             </environmentVariables>
+                            <environmentScript>${python.venv.dir}/bin/activate</environmentScript>
                             <arguments>
                                 <argument>-m</argument>
                                 <argument>pip</argument>
@@ -64,6 +82,7 @@
                                 <argument>-r</argument>
                                 <argument>requirements.txt</argument>
                             </arguments>
+
                         </configuration>
                     </execution>
                     <execution>
@@ -73,11 +92,12 @@
                         </goals>
                         <phase>test</phase>
                         <configuration>
-                            <executable>pytest</executable>
+                            <executable>${python.venv.dir}/bin/pytest</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <version>${edml.revision}</version>
                             </environmentVariables>
+                            <environmentScript>${python.venv.dir}/bin/activate</environmentScript>
                             <arguments>
                                 <argument>-ocache_dir=target/.pytest_cache</argument>
                             </arguments>
@@ -90,11 +110,12 @@
                         </goals>
                         <phase>package</phase>
                         <configuration>
-                            <executable>python</executable>
+                            <executable>${python.venv.dir}/bin/python</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <version>${edml.revision}</version>
                             </environmentVariables>
+                            <environmentScript>${python.venv.dir}/bin/activate</environmentScript>
                             <arguments>
                                 <argument>setup.py</argument>
                                 <argument>egg_info</argument>
