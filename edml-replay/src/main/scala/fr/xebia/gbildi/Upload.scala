@@ -62,7 +62,7 @@ object Upload extends App with TypeMapping with GoogleCloudProvider with Conflue
         .fromIterator(queryStream(bigquery, pickupQuery))
         .map { row =>
           val topic = s"${uploadConfig.topicPrefix}-PICKUP-${uploadConfig.gcpConfig.bigQueryConfig.date}"
-          val key = row.asKeyClass("🚕")
+          val key = row.asKeyClass
           val value = row.asTaxiTripPickup
           new ProducerRecord(topic, key, value)
         }
@@ -75,7 +75,7 @@ object Upload extends App with TypeMapping with GoogleCloudProvider with Conflue
         .fromIterator(queryStream(bigquery, dropoffQuery))
         .map { row =>
           val topic = s"${uploadConfig.topicPrefix}-DROPOFF-${uploadConfig.gcpConfig.bigQueryConfig.date}"
-          val key = row.asKeyClass("🚕")
+          val key = row.asKeyClass
           val value = row.asTaxiTripDropOff
           new ProducerRecord(topic, key, value)
         }

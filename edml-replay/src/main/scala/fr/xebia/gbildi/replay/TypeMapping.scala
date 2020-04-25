@@ -16,8 +16,8 @@ trait TypeMapping {
 
   implicit class tableResultParserOps(row: FieldValueList) {
 
-    def asKeyClass(label: String)(implicit zoneId: ZoneId): KeyClass =
-      KeyClass(label = label, uuid = row.get("uuid").getStringValue)
+    def asKeyClass(implicit zoneId: ZoneId): KeyClass =
+      KeyClass(uuid = row.get("uuid").getStringValue)
 
     def asTaxiTripPickup(implicit zoneId: ZoneId): TaxiTripPickup = {
       val datetime = row.get("pickup_datetime").getStringValue
@@ -31,7 +31,8 @@ trait TypeMapping {
         hourofday = row.get("hourofday").getLongValue.intValue(),
         pickup_zone_name = row.get("pickup_zone_name").getStringValue,
         dropoff_zone_name = row.get("dropoff_zone_name").getStringValue,
-        passenger_count = row.get("passenger_count").getLongValue.intValue()
+        passenger_count = row.get("passenger_count").getLongValue.intValue(),
+        borough = s"🚕${row.get("pu_borough").getStringValue}"
       )
     }
 
@@ -39,7 +40,8 @@ trait TypeMapping {
       val dateTime = row.get("dropoff_datetime").getStringValue
       TaxiTripDropoff(
         dropoff_datetime = ZonedDateTime.parse(dateTime, formatter.withZone(zoneId)).toInstant,
-        trip_duration = row.get("trip_duration").getLongValue.intValue()
+        trip_duration = row.get("trip_duration").getLongValue.intValue(),
+        borough = s"🚕${row.get("do_borough").getStringValue}"
       )
     }
   }

@@ -19,13 +19,13 @@ spec:
           image: gcr.io/event-driven-ml/edml-replay:latest
           env:
             - name: SOURCE_TOPIC
-              value: TAXI-TRIP-PICKUP-2018-11-28
+              value: TAXI-TRIP-PICKUP-2019-04-28
             - name: REPLAY_TOPIC
               value: TAXI-TRIP-PICKUP-REPLAY
             - name: DATE_TIME_COLUMN
               value: pickup_datetime
             - name: CONSUMER_GROUP
-              value: edml-pickup-replay-2018-11-28
+              value: edml-pickup-replay-2019-04-28
             - name: API_KEY
               valueFrom:
                 secretKeyRef:
