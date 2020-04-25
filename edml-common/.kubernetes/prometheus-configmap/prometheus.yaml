@@ -2,6 +2,8 @@ global:
   scrape_interval: 1s
   scrape_timeout: 1s
 
+  scheme: https
+
   scrape_configs:
     - job_name: 'edml-serving'
       scrape_interval: 1s

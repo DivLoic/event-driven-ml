@@ -109,5 +109,5 @@ override.tf.json
 # project
 .libtensorflow/
 ext.*.tfvars
-*edml-cmd/*
+.desktop/
 out/

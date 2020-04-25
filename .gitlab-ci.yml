@@ -2,12 +2,13 @@ image: loicmdivad/edml-cicd-base:0.1.1-SNAPSHOT
 
 variables:
   PIP_CACHE_DIR: out/.pip
+  VENV_HOME: out/.venv
   MAVEN_REPO: out/.m2
   MAVEN_OPTS: "-Dmaven.repo.local=${MAVEN_REPO}/repository"
   MAVEN_CONFIG: "-s ${MAVEN_REPO}/settings.xml"
 
 before_script:
-  - mkdir -p ${MAVEN_REPO}
+  - mkdir -p ${MAVEN_REPO} ${VENV_HOME} ${PIP_CACHE_DIR}
   - envsubst < settings.template.xml > ${MAVEN_REPO}/settings.xml
 
 stages:
@@ -19,31 +20,27 @@ stages:
 cache:
   key: EDML_CACHING_KEY
   paths:
+    - ${VENV_HOME}/
     - ${MAVEN_REPO}/
     - ${PIP_CACHE_DIR}/
   policy: pull-push
 
-.manual_submission: &manual_submission
+.on-demand: &on-demand
   except:
     variables:
       - $TRAIN_VERSION
-
-.manual_publication: &manual_publication
-  except:
-    variables:
       - $DEPLOY_PATH
       - $DEPLOY_VERSION
+
 test:
   stage: test
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   script:
     - ./mvnw -B test
 
 package:
   stage: package
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   script:
     - ./mvnw -B package jib:build -DskipTests
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
@@ -70,16 +67,15 @@ package:
 
 train:
   stage: deploy-app/train
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   variables:
     PROJECT_VERSION_CMD: 'maven-eval \$${edml.revision}'
     PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
   <<: *training
+  timeout: 48h
 
 on-demand-model-training:
   stage: deploy-app/train
-  <<: *manual_publication
   only:
     variables:
       - $TRAIN_VERSION
@@ -87,13 +83,17 @@ on-demand-model-training:
     PROJECT_VERSION_CMD: 'echo $$TRAIN_VERSION'
     PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
   <<: *training
+  timeout: 48h
 
 deploy-model:
   stage: deploy-model
-  <<: *manual_publication
   when: manual
   only:
     - trunk
+  except:
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
   script:
     - source .training-output.sh
     - edml
@@ -115,8 +115,7 @@ on-demand-model-deployement:
 
 deploy-app:
   stage: deploy-app/train
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   when: manual
   only:
     - trunk

@@ -73,7 +73,9 @@ class PredictorTransformer(modelStoreName: String,
       TripDurationPrediction(prediction.getOrElse(-1F), version = saved.version)
 
     }.recoverWith { case exception =>
-      logger error s"Prediction fail due to: ${exception.getMessage}"
+
+      logger error s"Prediction fail due to: ${exception.getClass.getSimpleName}, ${exception.getMessage}"
+      exception.printStackTrace()
       Failure(exception)
 
     }.getOrElse(PredictionError)
@@ -85,7 +87,15 @@ class PredictorTransformer(modelStoreName: String,
   def getLoader(tfModel: TFSavedModel): TensorFlowLoader =
     TensorFlowLoader.create(getModelId(tfModel), tfModel.gcs_path, modelOpts, modelSignatureDef)
 
-  def getSaved: Try[TFSavedModel] = Try(this.modelStore.get(modelSelector)).filter(Option(_).isDefined)
+  def getSaved: Try[TFSavedModel] = Try(this.modelStore.get(modelSelector))
+    .recoverWith { case error =>
+      Failure(new Error("Fail to access the state store for current model", error))
+    }
+    .filter(Option(_).isDefined)
+    .recoverWith {
+      case failure: java.lang.Error => Failure(failure)
+      case error => Failure(new IllegalStateException("No current model was found", error))
+    }
 
   def setModel(tfModel: TFSavedModel): Try[TensorFlowModel] = {
     val maybeModel = Try(getLoader(tfModel).get(Duration.ofSeconds(30)))

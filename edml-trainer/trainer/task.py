@@ -28,7 +28,7 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        '--train-examples',
+        '--train-size',
         help='Number of examples (in thousands) to run the training job over. '
              'If this is more than actual # of examples available, it cycles through them. '
              'So specifying 1000 here when you have only 100k examples makes this 10 epochs.',

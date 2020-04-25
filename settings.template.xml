@@ -11,6 +11,7 @@
         <profile>
             <properties>
                 <maven.username>${MAVEN_USERNAME}</maven.username>
+                <python.venv.dir>${VENV_HOME}/edml/</python.venv.dir>
             </properties>
             <id>github</id>
             <repositories>
