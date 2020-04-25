@@ -25,27 +25,22 @@ cache:
     - ${PIP_CACHE_DIR}/
   policy: pull-push
 
-.manual_submission: &manual_submission
+.on-demand: &on-demand
   except:
     variables:
       - $TRAIN_VERSION
-
-.manual_publication: &manual_publication
-  except:
-    variables:
       - $DEPLOY_PATH
       - $DEPLOY_VERSION
+
 test:
   stage: test
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   script:
     - ./mvnw -B test
 
 package:
   stage: package
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   script:
     - ./mvnw -B package jib:build -DskipTests
     - gsutil cp ./edml-serving/target/edml-serving*.jar gs://edml/maven/edml-serving/
@@ -72,16 +67,15 @@ package:
 
 train:
   stage: deploy-app/train
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   variables:
     PROJECT_VERSION_CMD: 'maven-eval \$${edml.revision}'
     PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
   <<: *training
+  timeout: 48h
 
 on-demand-model-training:
   stage: deploy-app/train
-  <<: *manual_publication
   only:
     variables:
       - $TRAIN_VERSION
@@ -89,13 +83,17 @@ on-demand-model-training:
     PROJECT_VERSION_CMD: 'echo $$TRAIN_VERSION'
     PY_PROJECT_VERSION_CMD: 'echo $$PROJECT_VERSION | tr "-" "_"'
   <<: *training
+  timeout: 48h
 
 deploy-model:
   stage: deploy-model
-  <<: *manual_publication
   when: manual
   only:
     - trunk
+  except:
+    variables:
+      - $DEPLOY_PATH
+      - $DEPLOY_VERSION
   script:
     - source .training-output.sh
     - edml
@@ -117,8 +115,7 @@ on-demand-model-deployement:
 
 deploy-app:
   stage: deploy-app/train
-  <<: *manual_submission
-  <<: *manual_publication
+  <<: *on-demand
   when: manual
   only:
     - trunk
