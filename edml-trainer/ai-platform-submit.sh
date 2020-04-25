@@ -38,7 +38,7 @@ TRAIN_NNSIZE="${TRAIN_NNSIZE:-20 10 5}"
 TRAIN_NEMBEDS="${TRAIN_NEMBEDS:-10}"
 TRAIN_BATCH_SIZE="${TRAIN_BATCH_SIZE:-128}"
 TRAIN_EVALSTEP="${TRAIN_EVALSTEP:-1}"
-TRAIN_EXAMPLES="${TRAIN_EXAMPLES:-500}" # 174000
+TRAIN_STEPS="${TRAIN_STEPS:-100}" # 174000
 
 echo ""
 echo ""
@@ -52,7 +52,7 @@ echo "+  TRAIN_EVALSTEP = ${TRAIN_EVALSTEP}"
 echo "+  TRAIN_NNSIZE = ${TRAIN_NNSIZE}"
 echo "+  TRAIN_NEMBEDS = ${TRAIN_NEMBEDS}"
 echo "+  TRAIN_BATCH_SIZE = ${TRAIN_BATCH_SIZE}"
-echo "+  TRAIN_EXAMPLES = ${TRAIN_EXAMPLES}"
+echo "+  TRAIN_STEPS = ${TRAIN_STEPS}"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
 gcloud ai-platform jobs submit training ${JOB_ID} \
@@ -68,7 +68,7 @@ gcloud ai-platform jobs submit training ${JOB_ID} \
      --nembeds ${TRAIN_NEMBEDS} \
      --nnsize ${TRAIN_NNSIZE} \
      --batch-size=${TRAIN_BATCH_SIZE} \
-     --train-examples=${TRAIN_EXAMPLES} \
+     --train-steps=${TRAIN_STEPS} \
      --eval-steps=${TRAIN_EVALSTEP}
 
 gcloud ai-platform jobs describe ${JOB_ID}
@@ -76,5 +76,7 @@ gcloud ai-platform jobs describe ${JOB_ID}
 gcloud ai-platform jobs stream-logs ${JOB_ID}
 
 STATUS=$(gcloud ai-platform jobs describe ${JOB_ID} --format="value(state)")
+
+echo "Job: ${JOB_ID}, finished with status ${STATUS}"
 
 [[ "$STATUS" -ne "SUCCEEDED" ]] && exit 1 || echo "The training job successfully completed!"
