@@ -9,5 +9,4 @@ case class ServingConfig(pickupTopic: String,
                          modelTopic: String,
                          modelStore: String,
                          predictionTopic: String,
-                         kafkaClient: Config,
-                         tensorflowConfig: Config)
+                         kafkaClient: Config)
