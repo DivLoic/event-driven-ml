@@ -2,6 +2,7 @@
   "annotations": {
     "list": [
       {
+        "$$hashKey": "object:1154",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -34,6 +35,7 @@
         "x": 0,
         "y": 0
       },
+      "hiddenSeries": false,
       "id": 2,
       "interval": "1m",
       "legend": {
@@ -131,6 +133,9 @@
             "mean"
           ],
           "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
             "mappings": [
               {
                 "id": 0,
@@ -143,28 +148,32 @@
             "max": 50,
             "min": 0,
             "nullValueMode": "connected",
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 20
-              },
-              {
-                "color": "red",
-                "value": 50
-              }
-            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "#EAB839",
+                  "value": 20
+                },
+                {
+                  "color": "red",
+                  "value": 50
+                }
+              ]
+            },
             "unit": "none"
           },
-          "override": {},
+          "overrides": [],
           "values": false
         },
-        "orientation": "horizontal"
+        "orientation": "horizontal",
+        "showUnfilled": true
       },
-      "pluginVersion": "6.4.4",
+      "pluginVersion": "6.7.3",
       "targets": [
         {
           "expr": "java_lang_operatingsystem_systemcpuload * 100",
@@ -185,14 +194,15 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": null,
-      "fill": 1,
-      "fillGradient": 0,
+      "fill": 10,
+      "fillGradient": 10,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 6,
         "y": 7
       },
+      "hiddenSeries": false,
       "id": 6,
       "interval": "1m",
       "legend": {
@@ -206,7 +216,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "connected",
+      "nullPointMode": "null",
       "options": {
         "dataLinks": []
       },
@@ -220,13 +230,15 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "kafka_streams_edml_taxi_trip_duration_rmse_value",
+          "expr": "kafka_streams_edml_taxi_trip_duration_rmse",
+          "interval": "",
           "legendFormat": "{{job}} {{model_version}}",
           "refId": "A"
         }
       ],
       "thresholds": [
         {
+          "$$hashKey": "object:2145",
           "colorMode": "critical",
           "fill": true,
           "line": true,
@@ -235,11 +247,12 @@
           "yaxis": "left"
         },
         {
+          "$$hashKey": "object:2146",
           "colorMode": "warning",
           "fill": false,
           "line": true,
           "op": "gt",
-          "value": 25,
+          "value": 20,
           "yaxis": "left"
         }
       ],
@@ -262,6 +275,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:2117",
           "format": "m",
           "label": "",
           "logBase": 1,
@@ -270,6 +284,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:2118",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -298,6 +313,7 @@
         "x": 18,
         "y": 7
       },
+      "hiddenSeries": false,
       "id": 8,
       "legend": {
         "avg": false,
@@ -392,6 +408,7 @@
         "x": 0,
         "y": 15
       },
+      "hiddenSeries": false,
       "id": 10,
       "interval": "1m",
       "legend": {
@@ -480,6 +497,32 @@
       }
     },
     {
+      "dashboardFilter": "",
+      "dashboardTags": [],
+      "datasource": null,
+      "description": "",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 15
+      },
+      "id": 14,
+      "limit": "1",
+      "links": [],
+      "nameFilter": "",
+      "onlyAlertsOnDashboard": true,
+      "repeat": null,
+      "show": "changes",
+      "sortOrder": 1,
+      "stateFilter": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Model Notifications",
+      "transparent": true,
+      "type": "alertlist"
+    },
+    {
       "alert": {
         "alertRuleTags": {},
         "conditions": [
@@ -496,20 +539,20 @@
             "query": {
               "params": [
                 "A",
-                "1s",
+                "2m",
                 "now"
               ]
             },
             "reducer": {
               "params": [],
-              "type": "min"
+              "type": "max"
             },
             "type": "query"
           }
         ],
         "executionErrorState": "keep_state",
-        "for": "0s",
-        "frequency": "1s",
+        "for": "10s",
+        "frequency": "2m",
         "handler": 1,
         "message": "🤖 Hey!! A new model has just been uploaded 🥂!",
         "name": "Model Deployment Notification",
@@ -528,11 +571,12 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 15
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
       },
+      "hiddenSeries": false,
       "id": 12,
       "interval": "60s",
       "legend": {
@@ -560,8 +604,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kafka_consumer_consumer_fetch_manager_metrics_records_consumed_rate{topic=\"EDML-MODEL-TOPIC\"} * 60",
-          "legendFormat": "EDML-MODEL-TOPIC",
+          "expr": "clamp_max(kafka_consumer_consumer_fetch_manager_metrics_records_consumed_rate{topic=\"EDML-MODEL-TOPIC\"} * 60, 1)",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "EDML1",
           "refId": "A"
         }
       ],
@@ -577,7 +623,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Panel Title",
+      "title": "Model Trigger",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -593,6 +639,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:1728",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -601,6 +648,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:1729",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -616,7 +664,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 20,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -627,6 +675,7 @@
     "to": "now"
   },
   "timepicker": {
+    "hidden": false,
     "refresh_intervals": [
       "5s",
       "10s",
@@ -643,5 +692,8 @@
   "timezone": "",
   "title": "EDML Project (PS Engineering)",
   "uid": "76R-40bWk",
+  "variables": {
+    "list": []
+  },
   "version": 1
 }

@@ -26,6 +26,8 @@ spec:
               value: TRIP-DURATION-SCORE
             - name: CORRECTION_TOPIC
               value: TRIP_DURATION_RESULT
+            - name: WINDOW_SIZE
+              value: 24 hours
             - name: APPLICATION_ID
               value: EDML-TRIP-SCORING
             - name: API_KEY

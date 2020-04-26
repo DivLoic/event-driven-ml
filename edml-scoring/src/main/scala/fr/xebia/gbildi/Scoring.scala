@@ -10,7 +10,7 @@ import fr.xebia.gbildi.processor.CostMetricProcessor
 import fr.xebia.gbildi.schema._
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import org.apache.kafka.streams.KafkaStreams
-import org.apache.kafka.streams.kstream.{JoinWindows, Printed, TimeWindows, Windowed}
+import org.apache.kafka.streams.kstream.{JoinWindows, TimeWindows}
 import org.apache.kafka.streams.scala.kstream._
 import org.apache.kafka.streams.scala.{ByteArrayWindowStore, Serdes, StreamsBuilder}
 import org.slf4j.LoggerFactory
@@ -90,11 +90,9 @@ object Scoring extends App with Configs {
         )
       }
 
+      .suppress(Suppressed.untilTimeLimit(Duration.ofMinutes(10), Suppressed.BufferConfig.maxRecords(5000)))
+
       .toStream.transform(() => new CostMetricProcessor)
-
-      .print(Printed.toSysOut[Windowed[String], Double])
-
-
 
     val topology = builder.build()
 
