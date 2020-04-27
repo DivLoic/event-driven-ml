@@ -1,20 +1,17 @@
 import tensorflow as tf
-import tensorflow_io as tfio
 from tensorflow_io.bigquery import BigQueryClient
 
 PROJECT_ID = "event-driven-ml"
 DATASET_GCP_PROJECT_ID = "event-driven-ml"
-DATASET_ID = "new_york_taxi_trips"
-TABLE_ID = "tlc_yellow_trips_2018"
+DATASET_ID = "edml_nyc_yellow_taxi_us"
+TABLE_ID = "gis_feat_eng"
 
-CSV_COLUMNS = ["uuid", "dayofweek", "hourofday", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "trip_duration"]
+INPUT_COLUMNS = ["uuid", "dayofweek", "hourofday", "weekofyear", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "distance", "trip_duration"]
 LABEL_COLUMN = "trip_duration"
 KEY_COLUMN = "uuid"
 
 # Set default values for each CSV column
-DEFAULTS = [['no_key'], [1], [0], [""], [""], [1], []]
-
-NEMBEDS = 3
+DEFAULTS = [['no_key'], [1], [0], [54], [""], [""], [1], [0], []]
 
 VOCABULARY = [
     'Allerton/Pelham Gardens', 'Alphabet City', 'Arden Heights', 'Arrochar/Fort Wadsworth', 
@@ -75,7 +72,8 @@ _CATEGORICAL_STR_VOCAB = {
 
 _CATEGORICAL_NUM_BUCKETS = {
     "dayofweek": 7,
-    "hourofday": 24
+    "hourofday": 24,
+    "weekofyear": 53
 }
 
 # Create an input function reading a file using the Dataset API
@@ -88,8 +86,8 @@ def read_dataset(suffix, mode, batch_size):
             project_id=DATASET_GCP_PROJECT_ID,
             table_id="{}_{}".format(TABLE_ID, suffix), 
             dataset_id=DATASET_ID,
-            selected_fields=CSV_COLUMNS,
-            output_types=[tf.string, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.int64],
+            selected_fields=INPUT_COLUMNS,
+            output_types=[tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.float64, tf.int64],
             requested_streams=10
         )
         
@@ -98,7 +96,7 @@ def read_dataset(suffix, mode, batch_size):
             label = tf.cast(features.pop(LABEL_COLUMN), tf.float32)
             return features, label
         
-        dataset = read_session.parallel_read_rows(sloppy=True).map(decode_row)
+        dataset = read_session.parallel_read_rows().map(decode_row)
 
         if mode == tf.estimator.ModeKeys.TRAIN:
             num_epochs = None  # indefinitely
@@ -110,9 +108,12 @@ def read_dataset(suffix, mode, batch_size):
         return dataset
     return _input_fn
 
+def normalize_distance(col):
+        mean = 3387.0
+        std = 3891.02
+        return (col - mean)/std
 
-
-def get_wide_deep():
+def get_wide_deep(nembeds):
     
     # One hot encode categorical features
     fc_dayofweek = tf.compat.v1.feature_column.categorical_column_with_identity(key="dayofweek",
@@ -121,45 +122,60 @@ def get_wide_deep():
     fc_hourofday = tf.compat.v1.feature_column.categorical_column_with_identity(key="hourofday",
                                                                                 num_buckets=_CATEGORICAL_NUM_BUCKETS["hourofday"])
     
+    fc_weekofyear = tf.compat.v1.feature_column.categorical_column_with_identity(key="weekofyear",
+                                                                                 num_buckets=_CATEGORICAL_NUM_BUCKETS["weekofyear"])
+    
     fc_pickuploc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="pickup_zone_name",
                                                                                 vocabulary_list=_CATEGORICAL_STR_VOCAB["pickup_zone_name"])
     
     fc_dropoffloc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="dropoff_zone_name",
                                                                             vocabulary_list=_CATEGORICAL_STR_VOCAB["pickup_zone_name"])
     
+    # Cross features to get combination of day and hour and pickup-dropoff locations
+    fc_crossed_day_hr = tf.feature_column.crossed_column(keys = [fc_dayofweek, fc_hourofday], hash_bucket_size = 100)
+    fc_crossed_pd_pair = tf.feature_column.crossed_column(keys = [fc_pickuploc, fc_dropoffloc], hash_bucket_size = 10000)
+
+    
     wide = [        
         # Sparse columns
-        fc_dayofweek, fc_hourofday,
-        fc_pickuploc, fc_dropoffloc
+        # fc_crossed_day_hr, fc_crossed_pd_pair, fc_weekofyear, 
+        fc_dayofweek, fc_hourofday, fc_pickuploc, fc_dropoffloc
     ]
     
     # Numerical column passanger_count
     fn_passenger_count = tf.compat.v1.feature_column.numeric_column(key="passenger_count")
+    fn_distance = tf.compat.v1.feature_column.numeric_column(key="distance", normalizer_fn=normalize_distance)
     
     # Embedding_column to "group" together ...
-    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=NEMBEDS)
-    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=NEMBEDS)
-    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=NEMBEDS)
-    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=NEMBEDS)
+    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=nembeds)
+    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=nembeds)
+    fc_embed_weekofyear = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_weekofyear, dimension=nembeds)
+    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=nembeds)
+    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=nembeds)
     
     deep = [
         fn_passenger_count,
+        # fn_distance,
         fc_embed_dayofweek,
         fc_embed_hourofday,
+        # fc_embed_weekofyear,
         fc_embed_pickuploc,
-        fc_embed_dropoffloc
+        fc_embed_dropoffloc,
     ]
     
     return wide, deep
+
 
 # Serving input receiver function
 def serving_input_receiver_fn():
     receiver_tensors = {
         'dayofweek': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
         'hourofday': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
+        'weekofyear': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="weekofyear"),
         'pickup_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="pickup_zone_name"),
         'dropoff_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="dropoff_zone_name"),
         'passenger_count': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="passenger_count"),
+        'distance': tf.compat.v1.placeholder(dtype=tf.float64, shape=[None], name="distance"),
         KEY_COLUMN: tf.compat.v1.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
     }
     

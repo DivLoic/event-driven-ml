@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from . import util
 
-def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eval_steps, eval_delay_secs):
+def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eval_steps, eval_delay_secs, nembeds):
     
     run_config = tf.estimator.RunConfig(save_checkpoints_secs=throttle_secs,
                                         tf_random_seed=2810,
@@ -14,15 +14,16 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
         return {"rmse": tf.compat.v1.metrics.root_mean_squared_error(labels=labels, predictions=pred_values)}
     
     # Feature engineering
-    wide, deep = util.get_wide_deep()
+    wide, deep = util.get_wide_deep(nembeds)
     
     estimator = tf.estimator.DNNLinearCombinedRegressor(
         model_dir=output_dir,
         linear_feature_columns=wide,
         dnn_feature_columns=deep,
         dnn_hidden_units=nnsize,
+        dnn_activation_fn=tf.nn.leaky_relu,
         batch_norm=True,
-        dnn_dropout=0.1,
+        dnn_dropout=0.2,
         config=run_config)
     
     estimator = tf.contrib.estimator.add_metrics(estimator=estimator, metric_fn=my_rmse)
@@ -34,7 +35,7 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
     exporter = tf.estimator.LatestExporter('exporter', serving_input_receiver_fn=util.serving_input_receiver_fn)
     
     eval_spec = tf.estimator.EvalSpec(
-        input_fn=util.read_dataset('eval', tf.estimator.ModeKeys.EVAL, 2**15),
+        input_fn=util.read_dataset('test', tf.estimator.ModeKeys.EVAL, 2**15),
         steps=eval_steps,
         start_delay_secs=eval_delay_secs,  # start evaluating after N seconds
         throttle_secs=throttle_secs,  # evaluate every N seconds
