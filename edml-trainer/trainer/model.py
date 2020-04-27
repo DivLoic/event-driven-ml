@@ -21,8 +21,9 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
         linear_feature_columns=wide,
         dnn_feature_columns=deep,
         dnn_hidden_units=nnsize,
+        dnn_activation_fn=tf.nn.leaky_relu,
         batch_norm=True,
-        dnn_dropout=0.1,
+        dnn_dropout=0.2,
         config=run_config)
     
     estimator = tf.contrib.estimator.add_metrics(estimator=estimator, metric_fn=my_rmse)

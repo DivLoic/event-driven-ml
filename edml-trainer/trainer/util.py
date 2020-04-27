@@ -1,5 +1,4 @@
 import tensorflow as tf
-# import tensorflow_io as tfio
 from tensorflow_io.bigquery import BigQueryClient
 
 PROJECT_ID = "event-driven-ml"
@@ -109,7 +108,10 @@ def read_dataset(suffix, mode, batch_size):
         return dataset
     return _input_fn
 
-
+def normalize_distance(col):
+        mean = 3387.0
+        std = 3891.02
+        return (col - mean)/std
 
 def get_wide_deep(nembeds):
     
@@ -129,15 +131,20 @@ def get_wide_deep(nembeds):
     fc_dropoffloc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="dropoff_zone_name",
                                                                             vocabulary_list=_CATEGORICAL_STR_VOCAB["pickup_zone_name"])
     
+    # Cross features to get combination of day and hour and pickup-dropoff locations
+    fc_crossed_day_hr = tf.feature_column.crossed_column(keys = [fc_dayofweek, fc_hourofday], hash_bucket_size = 100)
+    fc_crossed_pd_pair = tf.feature_column.crossed_column(keys = [fc_pickuploc, fc_dropoffloc], hash_bucket_size = 10000)
+
+    
     wide = [        
         # Sparse columns
-        fc_dayofweek, fc_hourofday, fc_weekofyear,
-        fc_pickuploc, fc_dropoffloc
+        fc_crossed_day_hr, fc_crossed_pd_pair, fc_weekofyear, 
+        fc_dayofweek, fc_hourofday, fc_pickuploc, fc_dropoffloc
     ]
     
     # Numerical column passanger_count
     fn_passenger_count = tf.compat.v1.feature_column.numeric_column(key="passenger_count")
-    fn_distance = tf.compat.v1.feature_column.numeric_column(key="distance")
+    fn_distance = tf.compat.v1.feature_column.numeric_column(key="distance", normalizer_fn=normalize_distance)
     
     # Embedding_column to "group" together ...
     fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=nembeds)
