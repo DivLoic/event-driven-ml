@@ -138,7 +138,7 @@ def get_wide_deep(nembeds):
     
     wide = [        
         # Sparse columns
-        fc_crossed_day_hr, fc_crossed_pd_pair, fc_weekofyear, 
+        # fc_crossed_day_hr, fc_crossed_pd_pair, fc_weekofyear, 
         fc_dayofweek, fc_hourofday, fc_pickuploc, fc_dropoffloc
     ]
     
@@ -155,10 +155,10 @@ def get_wide_deep(nembeds):
     
     deep = [
         fn_passenger_count,
-        fn_distance,
+        # fn_distance,
         fc_embed_dayofweek,
         fc_embed_hourofday,
-        fc_embed_weekofyear,
+        # fc_embed_weekofyear,
         fc_embed_pickuploc,
         fc_embed_dropoffloc,
     ]
