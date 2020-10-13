@@ -79,13 +79,13 @@ def parse_arguments():
         help='Hidden layer sizes to use for DNN feature columns -- provide space-separated layers',
         nargs='+',
         type=int,
-        default=[128, 32, 4]
+        default=[1024, 512, 256]
     )
     parser.add_argument(
         '--nembeds',
         help='Embedding size of a cross of n key real-valued parameters',
         type=int,
-        default=3
+        default=15
     )
 
     parser.add_argument(
@@ -141,7 +141,7 @@ def parse_arguments():
 
 def train_and_evaluate(args):
     
-    tf.compat.v1.summary.FileWriterCache.clear()
+    tf.summary.FileWriterCache.clear()
     
     estimator, train_spec, eval_spec = model.my_estimator(args.output_dir, args.throttle_secs, args.nnsize, args.batch_size, args.train_steps, args.eval_steps, args.eval_delay_secs, args.nembeds)
     
@@ -151,5 +151,5 @@ def train_and_evaluate(args):
 if __name__ == '__main__':
     
     args = parse_arguments()
-    tf.compat.v1.logging.set_verbosity(args.verbosity)
+    tf.logging.set_verbosity(args.verbosity)
     train_and_evaluate(args)

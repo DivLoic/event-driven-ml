@@ -4,14 +4,19 @@ from tensorflow_io.bigquery import BigQueryClient
 PROJECT_ID = "event-driven-ml"
 DATASET_GCP_PROJECT_ID = "event-driven-ml"
 DATASET_ID = "edml_nyc_yellow_taxi_us"
-TABLE_ID = "gis_feat_eng"
+TABLE_ID = "viz_gis_feat_eng"
 
-INPUT_COLUMNS = ["uuid", "dayofweek", "hourofday", "weekofyear", "pickup_zone_name", "dropoff_zone_name", "passenger_count", "distance", "trip_duration"]
+INPUT_COLUMNS = [
+    "uuid", "dayofweek", "hourofday", "weekofyear", "pickup_zone_name", "dropoff_zone_name", "centroide_distance",
+    "flag_airport", "flag_5_seat_car", "trip_duration"
+]
 LABEL_COLUMN = "trip_duration"
 KEY_COLUMN = "uuid"
 
-# Set default values for each CSV column
-DEFAULTS = [['no_key'], [1], [0], [54], [""], [""], [1], [0], []]
+# Set default values for each column
+DEFAULTS = [
+    ['no_key'], [7], [25], [26], [""], [""], [0.0], [2], [2], []
+]
 
 VOCABULARY = [
     'Allerton/Pelham Gardens', 'Alphabet City', 'Arden Heights', 'Arrochar/Fort Wadsworth', 
@@ -73,12 +78,13 @@ _CATEGORICAL_STR_VOCAB = {
 _CATEGORICAL_NUM_BUCKETS = {
     "dayofweek": 7,
     "hourofday": 24,
-    "weekofyear": 53
+    "weekofyear": 26 #53
 }
 
 # Create an input function reading a file using the Dataset API
 # Then provide the results to the Estimator API
 def read_dataset(suffix, mode, batch_size):
+    
     def _input_fn():
         client = BigQueryClient()
         read_session = client.read_session(
@@ -87,7 +93,9 @@ def read_dataset(suffix, mode, batch_size):
             table_id="{}_{}".format(TABLE_ID, suffix), 
             dataset_id=DATASET_ID,
             selected_fields=INPUT_COLUMNS,
-            output_types=[tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.int64, tf.float64, tf.int64],
+            output_types=[
+                tf.string, tf.int64, tf.int64, tf.int64, tf.string, tf.string, tf.float64, tf.int64, tf.int64, tf.int64
+            ],
             requested_streams=10
         )
         
@@ -106,6 +114,7 @@ def read_dataset(suffix, mode, batch_size):
 
         dataset = dataset.repeat(num_epochs).batch(batch_size)
         return dataset
+    
     return _input_fn
 
 def normalize_distance(col):
@@ -115,52 +124,67 @@ def normalize_distance(col):
 
 def get_wide_deep(nembeds):
     
+    # numerical column
+    fc_distance = tf.feature_column.numeric_column("centroide_distance")
+    
     # One hot encode categorical features
-    fc_dayofweek = tf.compat.v1.feature_column.categorical_column_with_identity(key="dayofweek",
+    fc_dayofweek = tf.feature_column.categorical_column_with_identity(key="dayofweek",
                                                                                 num_buckets=_CATEGORICAL_NUM_BUCKETS["dayofweek"])
     
-    fc_hourofday = tf.compat.v1.feature_column.categorical_column_with_identity(key="hourofday",
+    fc_hourofday = tf.feature_column.categorical_column_with_identity(key="hourofday",
                                                                                 num_buckets=_CATEGORICAL_NUM_BUCKETS["hourofday"])
     
-    fc_weekofyear = tf.compat.v1.feature_column.categorical_column_with_identity(key="weekofyear",
+    fc_weekofyear = tf.feature_column.categorical_column_with_identity(key="weekofyear",
                                                                                  num_buckets=_CATEGORICAL_NUM_BUCKETS["weekofyear"])
-    
-    fc_pickuploc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="pickup_zone_name",
+    # 2 steps to one hot encoding
+    fc_pickuploc = tf.feature_column.categorical_column_with_vocabulary_list(key="pickup_zone_name",
                                                                                 vocabulary_list=_CATEGORICAL_STR_VOCAB["pickup_zone_name"])
+    fc_pickuploc_ooe = tf.feature_column.indicator_column(fc_pickuploc)
     
-    fc_dropoffloc = tf.compat.v1.feature_column.categorical_column_with_vocabulary_list(key="dropoff_zone_name",
+    fc_dropoffloc = tf.feature_column.categorical_column_with_vocabulary_list(key="dropoff_zone_name",
                                                                             vocabulary_list=_CATEGORICAL_STR_VOCAB["pickup_zone_name"])
     
+    fc_dropoffloc_ooe = tf.feature_column.indicator_column(fc_dropoffloc)
+    
     # Cross features to get combination of day and hour and pickup-dropoff locations
-    fc_crossed_day_hr = tf.feature_column.crossed_column(keys = [fc_dayofweek, fc_hourofday], hash_bucket_size = 100)
-    fc_crossed_pd_pair = tf.feature_column.crossed_column(keys = [fc_pickuploc, fc_dropoffloc], hash_bucket_size = 10000)
-
+    fc_crossed_day_hr = tf.feature_column.crossed_column(keys=[fc_dayofweek, fc_hourofday], hash_bucket_size=100)
+    fc_crossed_pd_pair = tf.feature_column.crossed_column(keys=[fc_pickuploc, fc_dropoffloc], hash_bucket_size=10000)
+    fc_crossed_hour_pu = tf.feature_column.crossed_column(keys=[fc_hourofday, fc_pickuploc], hash_bucket_size=1000)
+    fc_crossed_hour_df = tf.feature_column.crossed_column(keys=[fc_hourofday, fc_dropoffloc], hash_bucket_size=1000)
+    
+    # binarize feature cross
+    fc_crossed_day_hr_ooe = tf.feature_column.indicator_column(fc_crossed_day_hr)
+    fc_crossed_pd_pair_ooe = tf.feature_column.indicator_column(fc_crossed_pd_pair)
+    fc_crossed_hour_pu_ooe = tf.feature_column.indicator_column(fc_crossed_hour_pu)
+    fc_crossed_hour_df_ooe = tf.feature_column.indicator_column(fc_crossed_hour_df)
+    
+    fc_airport = tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_identity(key="flag_airport", num_buckets=2))
+    fc_big_car = tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_identity(key="flag_5_seat_car", num_buckets=2))
+    fc_distance_cat = tf.feature_column.bucketized_column(source_column=fc_distance, 
+                                                          boundaries=[1248.0, 2077.0, 3778.0])
+    fc_distance_ooe = tf.feature_column.indicator_column(fc_distance_cat)
     
     wide = [        
         # Sparse columns
-        # fc_crossed_day_hr, fc_crossed_pd_pair, fc_weekofyear, 
-        fc_dayofweek, fc_hourofday, fc_pickuploc, fc_dropoffloc
+        fc_weekofyear, fc_crossed_day_hr_ooe, fc_crossed_pd_pair_ooe, fc_crossed_hour_pu_ooe, fc_crossed_hour_df_ooe, fc_airport, fc_big_car, 
+        fc_distance_ooe
     ]
-    
-    # Numerical column passanger_count
-    fn_passenger_count = tf.compat.v1.feature_column.numeric_column(key="passenger_count")
-    fn_distance = tf.compat.v1.feature_column.numeric_column(key="distance", normalizer_fn=normalize_distance)
-    
-    # Embedding_column to "group" together ...
-    fc_embed_dayofweek = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dayofweek, dimension=nembeds)
-    fc_embed_hourofday = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_hourofday, dimension=nembeds)
+        
+    # Embedding_column
     fc_embed_weekofyear = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_weekofyear, dimension=nembeds)
-    fc_embed_pickuploc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_pickuploc, dimension=nembeds)
-    fc_embed_dropoffloc = tf.compat.v1.feature_column.embedding_column(categorical_column=fc_dropoffloc, dimension=nembeds)
+    fc_embed_crossed_day_hr = tf.feature_column.embedding_column(fc_crossed_day_hr, dimension=nembeds)
+    fc_embed_crossed_pd_pair = tf.feature_column.embedding_column(fc_crossed_pd_pair, dimension=nembeds)
+    fc_embed_crossed_hour_pu = tf.feature_column.embedding_column(fc_crossed_hour_pu, dimension=nembeds)
+    fc_embed_crossed_hour_df = tf.feature_column.embedding_column(fc_crossed_hour_df, dimension=nembeds)
+    
     
     deep = [
-        fn_passenger_count,
-        # fn_distance,
-        fc_embed_dayofweek,
-        fc_embed_hourofday,
-        # fc_embed_weekofyear,
-        fc_embed_pickuploc,
-        fc_embed_dropoffloc,
+        fc_distance,
+        fc_embed_weekofyear,
+        fc_embed_crossed_day_hr,
+        fc_embed_crossed_pd_pair,
+        fc_embed_crossed_hour_pu,
+        fc_embed_crossed_hour_df
     ]
     
     return wide, deep
@@ -169,19 +193,19 @@ def get_wide_deep(nembeds):
 # Serving input receiver function
 def serving_input_receiver_fn():
     receiver_tensors = {
-        'dayofweek': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
-        'hourofday': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
-        'weekofyear': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="weekofyear"),
-        'pickup_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="pickup_zone_name"),
-        'dropoff_zone_name': tf.compat.v1.placeholder(dtype=tf.string, shape=[None], name="dropoff_zone_name"),
-        'passenger_count': tf.compat.v1.placeholder(dtype=tf.int64, shape=[None], name="passenger_count"),
-        'distance': tf.compat.v1.placeholder(dtype=tf.float64, shape=[None], name="distance"),
-        KEY_COLUMN: tf.compat.v1.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
+        'dayofweek': tf.placeholder(dtype=tf.int64, shape=[None], name="dayofweek"),
+        'hourofday': tf.placeholder(dtype=tf.int64, shape=[None], name="hourofday"),
+        'weekofyear': tf.placeholder(dtype=tf.int64, shape=[None], name="weekofyear"),
+        'pickup_zone_name': tf.placeholder(dtype=tf.string, shape=[None], name="pickup_zone_name"),
+        'dropoff_zone_name': tf.placeholder(dtype=tf.string, shape=[None], name="dropoff_zone_name"),
+        'centroide_distance': tf.placeholder(dtype=tf.float64, shape=[None], name="centroide_distance"),
+        'flag_airport': tf.placeholder(dtype=tf.int64, shape=[None], name="flag_airport"),
+        'flag_5_seat_car': tf.placeholder(dtype=tf.int64, shape=[None], name="flag_5_seat_car"),
+        KEY_COLUMN: tf.placeholder_with_default(tf.constant(['no_key']), [None], name="uuid")
     }
     
     features = {
-        key: tf.expand_dims(tensor, -1)
-        for key, tensor in receiver_tensors.items()
+        key: tf.expand_dims(tensor, -1) for key, tensor in receiver_tensors.items()
     }
         
     return tf.estimator.export.ServingInputReceiver(features=features, receiver_tensors=receiver_tensors)
