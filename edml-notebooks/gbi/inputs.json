@@ -1,0 +1,2 @@
+{"uuid": "g1", "dayofweek": 3, "hourofday": 23, "weekofyear": 16, "pickup_zone_name": "World Trade Center", "dropoff_zone_name": "Times Sq/Theatre District", "centroide_distance": 3400.0, "flag_airport": 0, "flag_5_seat_car": 0}
+{"uuid": "b1", "dayofweek": 6, "hourofday": 17, "weekofyear": 25, "pickup_zone_name": "World Trade Center", "dropoff_zone_name": "Newark Airport", "centroide_distance": 18000.0, "flag_airport": 1, "flag_5_seat_car": 1}
