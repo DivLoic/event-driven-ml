@@ -32,7 +32,7 @@ def my_estimator(output_dir, throttle_secs, nnsize, batch_size, train_steps, eva
         input_fn=util.read_dataset('train', tf.estimator.ModeKeys.TRAIN, batch_size),
         max_steps=train_steps)
     
-    exporter = tf.estimator.LatestExporter('exporter', serving_input_receiver_fn=util.serving_input_receiver_fn)
+    exporter = tf.estimator.BestExporter('exporter', serving_input_receiver_fn=util.serving_input_receiver_fn)
     
     eval_spec = tf.estimator.EvalSpec(
         input_fn=util.read_dataset('test', tf.estimator.ModeKeys.EVAL, 2**15),
